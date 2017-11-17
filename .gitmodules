@@ -1,0 +1,3 @@
+[submodule "chai3d"]
+	path = chai3d
+	url = git@github.com:chai3d/chai3d.git
