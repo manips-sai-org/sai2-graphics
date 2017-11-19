@@ -82,4 +82,4 @@ write_basic_package_version_file(
 )
 
 # add examples
-# ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/examples)
+ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/examples)
