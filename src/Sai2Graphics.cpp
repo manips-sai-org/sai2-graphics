@@ -127,6 +127,7 @@ void Sai2Graphics::getCameraPose(const std::string& camera_name,
 	pos = camera->getLocalPos(); ret_position << pos.x(), pos.y(), pos.z();
 	vert = camera->getUpVector(); ret_vertical << vert.x(), vert.y(), vert.z();
 	lookat = camera->getLookVector(); ret_lookat << lookat.x(), lookat.y(), lookat.z();
+	ret_lookat += ret_position;
 }
 
 // set camera pose
