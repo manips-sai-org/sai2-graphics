@@ -3,6 +3,7 @@
 git submodule update --init
 cd chai3d
 mkdir build
+cd build
 cmake .. && make -j8
 cd ../..
 
