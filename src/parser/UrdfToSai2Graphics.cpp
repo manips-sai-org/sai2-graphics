@@ -87,6 +87,7 @@ static void loadVisualtoGenericObject(cGenericObject* object, const my_shared_pt
 			mesh_ptr->scale.y,
 			mesh_ptr->scale.z
 		);
+		if (color) {tmp_mmesh->m_material->setColor(*color);}
 	} else if (geom_type == urdf::Geometry::BOX) {
 		// downcast geometry ptr to box type
 		const auto box_ptr = dynamic_cast<const urdf::Box*>(visual_ptr->geometry.get());
@@ -238,6 +239,7 @@ void UrdfToSai2GraphicsWorld(const std::string& filename,
 
 			// insert light source inside world
 			world->addChild(light);
+			light->m_name = light_ptr->name;
 
 			// enable light source
 			light->setEnabled(true);
