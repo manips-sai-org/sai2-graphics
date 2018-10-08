@@ -280,6 +280,33 @@ void UrdfToSai2GraphicsWorld(const std::string& filename,
 			loadVisualtoGenericObject(object, visual_ptr);
 		}
 	}
+
+	// parse dynamic objects
+	for (const auto object_pair: urdf_world->graphics_.dynamic_objects) {
+		const auto object_ptr = object_pair.second;
+		// initialize a cGenericObject to represent this object in the world
+		cGenericObject* object = new cGenericObject();
+		object->m_name = object_ptr->name;
+		// set object position and rotation
+		object->setLocalPos(cVector3d(
+				object_ptr->origin.position.x,
+				object_ptr->origin.position.y,
+				object_ptr->origin.position.z));
+		{// brace temp variables to separate scope
+			auto urdf_q = object_ptr->origin.rotation;
+			Quaternion<double> tmp_q(urdf_q.w, urdf_q.x, urdf_q.y, urdf_q.z);
+			cMatrix3d tmp_cmat3; tmp_cmat3.copyfrom(tmp_q.toRotationMatrix());
+			object->setLocalRot(tmp_cmat3);	
+		}
+		// add to world
+		world->addChild(object);
+
+		// load object graphics, must have atleast one
+		assert(object_ptr->visual);
+		for (const auto visual_ptr: object_ptr->visual_array) {
+			loadVisualtoGenericObject(object, visual_ptr);
+		}
+	}
 }
 
 void UrdfToSai2GraphicsRobot(const std::string& filename,

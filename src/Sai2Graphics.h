@@ -35,6 +35,16 @@ public:
 	void updateGraphics(const std::string& robot_name,
 						Sai2Model::Sai2Model* robot_model);
 
+     /**
+     * @brief Update the graphics model for an object in the virtual world.
+     * @param object_name Name of the object for which model update is considered.
+     * @param object_pos  position of the object in the world
+     * @param object_ori  orientation of the object in the world
+     */
+     void updateObjectGraphics(const std::string& object_name,
+                         const Eigen::Vector3d& object_pos,
+                         const Eigen::Quaterniond object_ori);
+
 	/**
      * @brief Render the virtual world to the current context.
      * 	NOTE: the correct context should have been selected prior to this.

@@ -103,6 +103,33 @@ void Sai2Graphics::updateGraphics(const std::string& robot_name,
 	_world->updateShadowMaps();
 }
 
+void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
+                         const Eigen::Vector3d& object_pos,
+                         const Eigen::Quaterniond object_ori)
+{
+	cGenericObject* object = NULL;
+	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+		if (object_name == _world->getChild(i)->m_name) {
+			// cast to cRobotBase
+			object = _world->getChild(i);
+			if (object != NULL) {
+				break;
+			}
+		}
+	}
+	if (object == NULL) {
+		//TODO: throw exception
+		cerr << "Could not find object in chai world: " << object_name << endl;
+		abort();
+	}
+
+	// update pose
+	object->setLocalPos(object_pos);
+	object->setLocalRot(object_ori.toRotationMatrix());
+
+
+}
+
 void Sai2Graphics::render(const std::string& camera_name,
 							int window_width, 
 							int window_height, 
