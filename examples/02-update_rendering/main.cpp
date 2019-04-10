@@ -55,7 +55,7 @@ int main() {
 
     // create window and make it current
     glfwWindowHint(GLFW_VISIBLE, 0);
-    GLFWwindow* window = glfwCreateWindow(windowW, windowH, "01-parse_world_and_robot", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowW, windowH, "02-update_rendering", NULL, NULL);
 	glfwSetWindowPos(window, windowPosX, windowPosY);
 	glfwShowWindow(window);
     glfwMakeContextCurrent(window);
