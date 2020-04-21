@@ -11,6 +11,7 @@
 #include <chai3d.h>
 #include "chai_extension/CRobotBase.h"
 #include "chai_extension/CRobotLink.h"
+#include "chai_extension/Capsule.h"
 
 namespace Parser {
 /**

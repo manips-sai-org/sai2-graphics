@@ -112,6 +112,14 @@ static void loadVisualtoGenericObject(cGenericObject* object, const my_shared_pt
 		chai3d::cCreateCylinder(tmp_mesh, cylinder_ptr->length, cylinder_ptr->radius);
 		if (color) {tmp_mesh->m_material->setColor(*color);}
 		tmp_mmesh->addMesh(tmp_mesh);
+	} else if (geom_type == urdf::Geometry::CAPSULE) {
+		// downcast geometry ptr to cylinder type
+		const auto capsule_ptr = dynamic_cast<const urdf::Capsule*>(visual_ptr->geometry.get());
+		assert(capsule_ptr);
+		// create chai sphere mesh
+		chai3d::cCreateCapsule(tmp_mesh, capsule_ptr->radius, capsule_ptr->length);
+		if (color) {tmp_mesh->m_material->setColor(*color);}
+		tmp_mmesh->addMesh(tmp_mesh);
 	}
 	if (color) {delete color;}
 	// set position and orientation for mesh
