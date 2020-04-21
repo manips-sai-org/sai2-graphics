@@ -42,7 +42,10 @@ SET(PARSER_SOURCE ${PROJECT_SOURCE_DIR}/src/parser/UrdfToSai2Graphics.cpp)
 
 # include Graphics
 SET(SAI2-GRAPHICS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
-SET(GRAPHICS_SOURCE ${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp)
+SET(GRAPHICS_SOURCE ${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
+	${PROJECT_SOURCE_DIR}/src/chai_extension/Capsule.cpp
+	${PROJECT_SOURCE_DIR}/src/chai_extension/CapsuleMesh.cpp
+	)
 
 # Add the include directory to the include paths
 INCLUDE_DIRECTORIES (
