@@ -4,6 +4,9 @@ PROJECT (SAI2-GRAPHICS)
 SET (PROJECT_VERSION 0.1.0) #major version is zero for now since api will certainly change in future
 
 SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include")
+SET(PROJECT_DEFINITIONS ${PROJECT_DEFINITIONS} -DGL_SILENCE_DEPRECATION)
+
+ADD_DEFINITIONS(${PROJECT_DEFINITIONS})
 
 # set default build to release with debug info. mimic'ed from RBDL project.
 IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -72,6 +75,7 @@ EXPORT (PACKAGE SAI2-GRAPHICS)
 # configure package
 SET (CONF_INCLUDE_DIRS ${SAI2-GRAPHICS_INCLUDE_DIRS})
 SET (CONF_LIBRARIES ${SAI2-GRAPHICS_LIBRARIES})
+SET (CONF_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 # create package configuration and version files
 CONFIGURE_FILE(SAI2-GRAPHICSConfig.cmake.in "${PROJECT_BINARY_DIR}/SAI2-GRAPHICSConfig.cmake" @ONLY)
