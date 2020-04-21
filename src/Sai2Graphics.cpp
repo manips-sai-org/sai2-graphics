@@ -249,4 +249,115 @@ cCamera* Sai2Graphics::getCamera(const std::string& camera_name) {
 	return camera;
 }
 
+cRobotLink* Sai2Graphics::findLinkRecursive(cRobotLink* parent, const std::string& link_name) {
+	// call on children
+	cRobotLink* child;
+	cRobotLink* ret_link = NULL;
+	for (unsigned int i = 0; i < parent->getNumChildren(); ++i) {
+		child = dynamic_cast<cRobotLink*>(parent->getChild(i));
+		if (child != NULL) {
+			if (child->m_name == link_name) {
+				ret_link = child;
+				break;
+			} else {
+				ret_link = findLinkRecursive(child, link_name);
+			}
+		}
+	}
+	return ret_link;
+}
+
+cRobotLink* Sai2Graphics::findLink(const std::string& robot_name, const std::string& link_name) {
+	// get robot base
+	cRobotBase* base = NULL;
+	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+		if (robot_name == _world->getChild(i)->m_name) {
+			// cast to cRobotBase
+			base = dynamic_cast<cRobotBase*>(_world->getChild(i));
+			if (base != NULL) {
+				break;
+			}
+		}
+	}
+	if (base == NULL) {
+		//TODO: throw exception
+		cerr << "Could not find robot in chai world: " << robot_name << endl;
+		abort();
+	}
+
+	cRobotLink* target_link = NULL;
+	// get target link
+	cRobotLink* base_link;
+	for (unsigned int i = 0; i < base->getNumChildren(); ++i) {
+		base_link = dynamic_cast<cRobotLink*>(base->getChild(i));
+		if (base_link != NULL) {
+			if (base_link->m_name == link_name) {
+				target_link = base_link;
+				break;
+			} else {
+				target_link = findLinkRecursive(base_link, link_name);
+			}
+		}
+	}
+	return target_link;
+}
+
+// Show frame for a particular link or all links on a robot.
+bool Sai2Graphics::showLinkFrame(bool show_frame,
+                         			const std::string& robot_name,
+                         			const std::string& link_name,
+                         			const double frame_pointer_length) {
+	bool fShouldApplyAllLinks = false;
+	if (link_name.empty()) {
+		fShouldApplyAllLinks = true;
+	}
+
+	// get robot base
+	cRobotBase* base = NULL;
+	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+		if (robot_name == _world->getChild(i)->m_name) {
+			// cast to cRobotBase
+			base = dynamic_cast<cRobotBase*>(_world->getChild(i));
+			if (base != NULL) {
+				break;
+			}
+		}
+	}
+	if (base == NULL) {
+		//TODO: throw exception
+		cerr << "Could not find robot in chai world: " << robot_name << endl;
+		abort();
+	}
+
+	// apply frame show
+	if (fShouldApplyAllLinks) {
+		// TODO: apply to whole robot
+	} else {
+		cRobotLink* target_link = NULL;
+		// get target link
+		cRobotLink* base_link;
+		for (unsigned int i = 0; i < base->getNumChildren(); ++i) {
+			base_link = dynamic_cast<cRobotLink*>(base->getChild(i));
+			if (base_link != NULL) {
+				if (base_link->m_name == link_name) {
+					target_link = base_link;
+					break;
+				} else {
+					target_link = findLinkRecursive(base_link, link_name);
+				}
+			}
+		}
+		if (target_link == NULL) {
+			cerr << "Could not find link in robot: " << link_name << endl;
+			abort();
+		}
+
+		// set wireframe whenever we show frame
+		target_link->setWireMode(show_frame, true);
+		target_link->setFrameSize(frame_pointer_length, false);
+		target_link->setShowFrame(show_frame, false);
+	}
+	return show_frame; // TODO: handle correctly
+}
+
 }

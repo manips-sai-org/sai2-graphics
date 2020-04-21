@@ -111,11 +111,32 @@ public:
      */
      chai3d::cCamera* getCamera(const std::string& camera_name);
 
+     /**
+     * @brief Show frame for a particular link or all links on a robot.
+     * @return Current value for show_frame after operation.
+     * @param show_frame Flag whether should show frame or not.
+     * @param robot_name Robot name.
+     * @param robot_name Link name. If left blank, all link frames are shown.
+     * @param frame_pointer_length Axis arrow length in meters.
+     */
+     bool showLinkFrame(bool show_frame,
+                         const std::string& robot_name,
+                         const std::string& link_name = "",
+                         const double frame_pointer_length = 0.03);
+
 public:
 	/**
      * @brief Internal cWorld object.
      */
 	chai3d::cWorld* _world;
+
+public:
+     /**
+     * internal functions to find link
+     */
+     chai3d::cRobotLink* findLinkRecursive(chai3d::cRobotLink* parent, const std::string& link_name);
+
+     chai3d::cRobotLink* findLink(const std::string& robot_name, const std::string& link_name);
 
 };
 
