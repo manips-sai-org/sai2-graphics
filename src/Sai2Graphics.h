@@ -113,16 +113,28 @@ public:
 
      /**
      * @brief Show frame for a particular link or all links on a robot.
-     * @return Current value for show_frame after operation.
+          This also causes the link graphics as well as graphics for any 
+          child link to be displayed as wire mesh to allow the frame to be
+          seen.
      * @param show_frame Flag whether should show frame or not.
      * @param robot_name Robot name.
      * @param robot_name Link name. If left blank, all link frames are shown.
      * @param frame_pointer_length Axis arrow length in meters.
      */
-     bool showLinkFrame(bool show_frame,
+     void showLinkFrame(bool show_frame,
                          const std::string& robot_name,
                          const std::string& link_name = "",
                          const double frame_pointer_length = 0.03);
+
+     /**
+     * @brief Render wire mesh for a particular link or all links on a robot.
+     * @param show_wiremesh Flag whether should show wire mesh or not.
+     * @param robot_name Robot name.
+     * @param robot_name Link name. If left blank, all link frames are shown.
+     */
+     void showWireMeshRender(bool show_wiremesh,
+                         const std::string& robot_name,
+                         const std::string& link_name = "");
 
 public:
 	/**
@@ -134,10 +146,11 @@ public:
      /**
      * internal functions to find link
      */
-     chai3d::cRobotLink* findLinkRecursive(chai3d::cRobotLink* parent, const std::string& link_name);
+     chai3d::cRobotLink* findLinkObjectInParentLinkRecursive(chai3d::cRobotLink* parent, const std::string& link_name);
 
      chai3d::cRobotLink* findLink(const std::string& robot_name, const std::string& link_name);
 
+     void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame, const double frame_pointer_length);
 };
 
 }
