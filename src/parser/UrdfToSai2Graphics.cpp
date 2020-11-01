@@ -116,9 +116,35 @@ static void loadVisualtoGenericObject(cGenericObject* object, const my_shared_pt
 		// downcast geometry ptr to cylinder type
 		const auto capsule_ptr = dynamic_cast<const urdf::Capsule*>(visual_ptr->geometry.get());
 		assert(capsule_ptr);
-		// create chai sphere mesh
-		chai3d::cCreateCapsule(tmp_mesh, capsule_ptr->radius, capsule_ptr->length);
-		if (color) {tmp_mesh->m_material->setColor(*color);}
+		if(color) {
+			if (material_ptr && material_ptr->has_color2) {
+				auto color2 = new cColorf(material_ptr->color2.r,
+					material_ptr->color2.g,
+					material_ptr->color2.b,
+					material_ptr->color2.a);
+				chai3d::cCreateCapsule(
+					tmp_mesh,
+					capsule_ptr->radius,
+					capsule_ptr->length,
+					20, /* a_num_longitudinal_slices */
+					16, /* a_num_circumferential_slices */
+					*color,
+					*color2
+				);
+				// if dual color information is present, we use the bicolor gradient
+				// rendering of the capsule which requires vertex coloring
+				tmp_mesh->setUseVertexColors(true, true);
+			} else {
+				chai3d::cCreateCapsule(tmp_mesh, capsule_ptr->radius, capsule_ptr->length);
+				// vertex coloring not needed, we set the material property
+				tmp_mesh->m_material->setColor(*color);
+			}
+		} else {
+			chai3d::cCreateCapsule(tmp_mesh, capsule_ptr->radius, capsule_ptr->length);
+			// if no color information is present, we use the default rendering of the
+			// capsule which has a vertex coloring based bicolor gradient
+			tmp_mesh->setUseVertexColors(true, true);
+		}
 		tmp_mmesh->addMesh(tmp_mesh);
 	}
 	if (color) {delete color;}
