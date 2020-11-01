@@ -12,7 +12,9 @@ void cCreateCapsule(cMesh* a_mesh,
     double a_radius,
     double a_length,
     uint a_num_longitudinal_slices,
-    uint a_num_circumferential_slices
+    uint a_num_circumferential_slices,
+    cColorf color1,
+    cColorf color2
 ) {
 	cCapsule obj(a_radius, a_length, 0.1, a_num_longitudinal_slices, a_num_circumferential_slices);
 	Vector3d point1, point2, point3, point4;
@@ -29,6 +31,14 @@ void cCreateCapsule(cMesh* a_mesh,
     uint nv_long_wendcaps = a_num_longitudinal_slices + nv_endcap_offset*2;
 
     double s_i, s_ip1, t_i, t_ip1;
+
+    // vertex colors
+    //TODO: also use alpha
+    Vector3d c1; c1 << color1[0], color1[1], color1[2];
+    Vector3d c2; c2 << color2[0], color2[1], color2[2];
+    Vector3d c_m = 0.5*(c1 + c2);
+    Vector3d c_v = c1 - c_m;
+
     // cout << "_ds_longitudinal " << _ds_longitudinal << " _ds_longitudinal_cap: " << _ds_longitudinal_cap << endl;
     // cout << "a_num_longitudinal_slices " << a_num_longitudinal_slices << " nv_endcap_offset: " << nv_endcap_offset << " nv_long_wendcaps: " << nv_long_wendcaps << endl;
     for (uint i = 0; i < (nv_long_wendcaps-1); i++) {
@@ -81,10 +91,12 @@ void cCreateCapsule(cMesh* a_mesh,
     		}
 
 			// create new vertices
-		    int vertexIndex0 = a_mesh->newVertex(cVector3d(point1), cVector3d(normal1));
-		    int vertexIndex1 = a_mesh->newVertex(cVector3d(point2), cVector3d(normal2));
-		    int vertexIndex2 = a_mesh->newVertex(cVector3d(point3), cVector3d(normal3));
-		    int vertexIndex3 = a_mesh->newVertex(cVector3d(point4), cVector3d(normal4));
+            Vector3d cc = c_m + c_v*cos(j*_ds_angle);
+            cColorf vcolor(cc[0], cc[1], cc[2]);
+		    int vertexIndex0 = a_mesh->newVertex(cVector3d(point1), cVector3d(normal1), cVector3d(0,0,0), vcolor);
+		    int vertexIndex1 = a_mesh->newVertex(cVector3d(point2), cVector3d(normal2), cVector3d(0,0,0), vcolor);
+		    int vertexIndex2 = a_mesh->newVertex(cVector3d(point3), cVector3d(normal3), cVector3d(0,0,0), vcolor);
+		    int vertexIndex3 = a_mesh->newVertex(cVector3d(point4), cVector3d(normal4), cVector3d(0,0,0), vcolor);
 
 		    // create triangles
 		    a_mesh->newTriangle(vertexIndex0, vertexIndex1, vertexIndex2);

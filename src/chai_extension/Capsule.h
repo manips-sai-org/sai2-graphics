@@ -93,7 +93,9 @@ void cCreateCapsule(cMesh* a_mesh,
     double a_radius,
     double a_length,
     uint a_num_longitudinal_slices = 20,
-    uint a_num_circumferential_slices = 16
+    uint a_num_circumferential_slices = 16,
+    cColorf color1 = cColorf(0.7, 0.48, 0.18),
+    cColorf color2 = cColorf(0.2, 0.05, 0.0)
 );
 
 }
