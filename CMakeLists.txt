@@ -45,6 +45,8 @@ SET(SAI2-GRAPHICS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
 SET(GRAPHICS_SOURCE ${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
 	${PROJECT_SOURCE_DIR}/src/chai_extension/Capsule.cpp
 	${PROJECT_SOURCE_DIR}/src/chai_extension/CapsuleMesh.cpp
+	${PROJECT_SOURCE_DIR}/src/chai_extension/Pyramid.cpp
+	${PROJECT_SOURCE_DIR}/src/chai_extension/PyramidMesh.cpp
 	)
 
 # Add the include directory to the include paths

@@ -146,6 +146,19 @@ static void loadVisualtoGenericObject(cGenericObject* object, const my_shared_pt
 			tmp_mesh->setUseVertexColors(true, true);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
+	} else if (geom_type == urdf::Geometry::PYRAMID) {
+		// downcast geometry ptr to pyramid type
+		const auto pyramid_ptr = dynamic_cast<const urdf::Pyramid*>(visual_ptr->geometry.get());
+		assert(pyramid_ptr);
+		chai3d::cCreatePyramid(
+			tmp_mesh,
+			pyramid_ptr->num_sides,
+			pyramid_ptr->base_size,
+			pyramid_ptr->height,
+			pyramid_ptr->use_center_vertex
+		);
+		if (color) {tmp_mesh->m_material->setColor(*color);}
+		tmp_mmesh->addMesh(tmp_mesh);
 	}
 	if (color) {delete color;}
 	// set position and orientation for mesh

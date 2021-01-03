@@ -12,6 +12,7 @@
 #include "chai_extension/CRobotBase.h"
 #include "chai_extension/CRobotLink.h"
 #include "chai_extension/Capsule.h"
+#include "chai_extension/Pyramid.h"
 
 namespace Parser {
 /**
