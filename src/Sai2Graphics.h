@@ -12,6 +12,8 @@
 #include "Sai2Model.h"
 #include "chai_extension/CRobotLink.h"
 
+#include <GLFW/glfw3.h> //must be loaded after loading opengl/glew
+
 namespace Sai2Graphics {
 
 class Sai2Graphics {
@@ -26,6 +28,16 @@ public:
 
 	// dtor
 	~Sai2Graphics();
+
+     void initializeWindow(const std::string& window_name = "sai2 world");
+
+     void closeWindow();
+
+     bool isWindowOpen() {
+          return !glfwWindowShouldClose(_window);
+     }
+
+     void updateWindowWithCameraView(const std::string &camera_name);
 
 	/**
      * @brief Update the graphics model for a robot in the virtual world.
@@ -55,8 +67,8 @@ public:
      *	for selective rendering. It does not change the GL context to render to.
      */
 	void render(const std::string& camera_name,
-				int window_width, 
-				int window_height, 
+				int window_width = 0, 
+				int window_height = 0, 
 				int display_context_id = 0);
 
      /**
@@ -141,6 +153,25 @@ public:
      * @brief Internal cWorld object.
      */
 	chai3d::cWorld* _world;
+
+     /**
+      * @brief glfw window
+      * 
+      */
+     GLFWwindow* _window;
+
+     /**
+      * @brief position and direction of view for current camera
+      * 
+      */
+	Vector3d _camera_pos, _camera_lookat;
+
+	double _last_cursorx, _last_cursory;
+
+     int _window_width, _window_height;
+
+
+     std::string _current_camera_name;
 
 public:
      /**

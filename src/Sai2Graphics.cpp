@@ -12,6 +12,126 @@
 using namespace std;
 using namespace chai3d;
 
+namespace
+{
+
+	// flags for scene camera movement
+	bool fTransXp = false;
+	bool fTransXn = false;
+	bool fTransYp = false;
+	bool fTransYn = false;
+	bool fTransZp = false;
+	bool fTransZn = false;
+	bool fRotPanTilt = false;
+	bool fshowCameraPose = false;
+
+	// callback to print glfw errors
+	void glfwError(int error, const char *description)
+	{
+		cerr << "GLFW Error: " << description << endl;
+		exit(1);
+	}
+
+	// callback when a key is pressed
+	void keySelect(GLFWwindow *window, int key, int scancode, int action, int mods)
+	{
+		bool set = (action != GLFW_RELEASE);
+		switch (key)
+		{
+		case GLFW_KEY_ESCAPE:
+			// exit application
+			glfwSetWindowShouldClose(window, GL_TRUE);
+			break;
+		case GLFW_KEY_RIGHT:
+			fTransXp = set;
+			break;
+		case GLFW_KEY_LEFT:
+			fTransXn = set;
+			break;
+		case GLFW_KEY_UP:
+			fTransYp = set;
+			break;
+		case GLFW_KEY_DOWN:
+			fTransYn = set;
+			break;
+		case GLFW_KEY_A:
+			fTransZp = set;
+			break;
+		case GLFW_KEY_Z:
+			fTransZn = set;
+			break;
+		case GLFW_KEY_S:
+			fshowCameraPose = set;
+			break;
+		default:
+			break;
+		}
+	}
+
+	// callback when a mouse button is pressed
+	void mouseClick(GLFWwindow *window, int button, int action, int mods)
+	{
+		bool set = (action != GLFW_RELEASE);
+		// TODO: mouse interaction with robot
+		switch (button)
+		{
+		// left click pans and tilts
+		case GLFW_MOUSE_BUTTON_LEFT:
+			fRotPanTilt = set;
+			// NOTE: the code below is recommended but doesn't work well
+			// if (fRotPanTilt) {
+			// 	// lock cursor
+			// 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			// } else {
+			// 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			// }
+			break;
+		// if right click: don't handle. this is for menu selection
+		case GLFW_MOUSE_BUTTON_RIGHT:
+			// TODO: menu
+			break;
+		// if middle click: don't handle. doesn't work well on laptops
+		case GLFW_MOUSE_BUTTON_MIDDLE:
+			break;
+		default:
+			break;
+		}
+	}
+
+	GLFWwindow *glfwInitialize(const std::string& window_name)
+	{
+		/*------- Set up visualization -------*/
+		// set up error callback
+		glfwSetErrorCallback(glfwError);
+
+		// initialize GLFW
+		glfwInit();
+
+		// retrieve resolution of computer display and position window accordingly
+		GLFWmonitor *primary = glfwGetPrimaryMonitor();
+		const GLFWvidmode *mode = glfwGetVideoMode(primary);
+
+		// information about computer screen and GLUT display window
+		int screenW = mode->width;
+		int screenH = mode->height;
+		int windowW = 0.8 * screenH;
+		int windowH = 0.5 * screenH;
+		int windowPosY = (screenH - windowH) / 2;
+		int windowPosX = windowPosY;
+
+		// create window and make it current
+		glfwWindowHint(GLFW_VISIBLE, 0);
+		GLFWwindow *window = glfwCreateWindow(windowW, windowH, window_name.c_str(), NULL, NULL);
+		glfwSetWindowPos(window, windowPosX, windowPosY);
+		glfwShowWindow(window);
+		glfwMakeContextCurrent(window);
+		glfwSwapInterval(1);
+
+		return window;
+	}
+
+}
+
 namespace Sai2Graphics 
 {
 
@@ -26,7 +146,103 @@ Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
 // dtor
 Sai2Graphics::~Sai2Graphics() {
 	delete _world;
+	delete _window;
 	_world = NULL;	
+	_window = NULL;	
+}
+
+void Sai2Graphics::initializeWindow(const std::string& window_name) {
+	_window = glfwInitialize(window_name);
+
+	// set callbacks
+	glfwSetKeyCallback(_window, keySelect);
+	glfwSetMouseButtonCallback(_window, mouseClick);
+}
+
+void Sai2Graphics::closeWindow() {
+	glfwDestroyWindow(_window);
+	glfwTerminate();
+}
+
+void Sai2Graphics::updateWindowWithCameraView(const std::string &camera_name)
+{
+	// update graphics. this automatically waits for the correct amount of time
+	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
+	glfwSwapBuffers(_window);
+	glFinish();
+
+	// poll for events
+	glfwPollEvents();
+
+	// move scene camera as required
+	Vector3d dummy_camera_vertical;
+	getCameraPose(camera_name, _camera_pos, dummy_camera_vertical, _camera_lookat);
+	Vector3d cam_depth_axis;
+	cam_depth_axis = _camera_lookat - _camera_pos;
+	cam_depth_axis.normalize();
+	Vector3d cam_up_axis;
+	cam_up_axis << 0.0, 0.0, 1.0; // TODO: there might be a better way to do this
+	Vector3d cam_roll_axis = (_camera_lookat - _camera_pos).cross(cam_up_axis);
+	cam_roll_axis.normalize();
+	Vector3d cam_lookat_axis = _camera_lookat;
+	cam_lookat_axis.normalize();
+	if (fTransXp)
+	{
+			_camera_pos = _camera_pos + 0.05 * cam_roll_axis;
+			_camera_lookat = _camera_lookat + 0.05 * cam_roll_axis;
+	}
+	if (fTransXn)
+	{
+			_camera_pos = _camera_pos - 0.05 * cam_roll_axis;
+			_camera_lookat = _camera_lookat - 0.05 * cam_roll_axis;
+	}
+	if (fTransYp)
+	{
+			// _camera_pos = _camera_pos + 0.05*cam_lookat_axis;
+			_camera_pos = _camera_pos + 0.05 * cam_up_axis;
+			_camera_lookat = _camera_lookat + 0.05 * cam_up_axis;
+	}
+	if (fTransYn)
+	{
+			// _camera_pos = _camera_pos - 0.05*cam_lookat_axis;
+			_camera_pos = _camera_pos - 0.05 * cam_up_axis;
+			_camera_lookat = _camera_lookat - 0.05 * cam_up_axis;
+	}
+	if (fTransZp)
+	{
+			_camera_pos = _camera_pos + 0.1 * cam_depth_axis;
+			_camera_lookat = _camera_lookat + 0.1 * cam_depth_axis;
+	}
+	if (fTransZn)
+	{
+			_camera_pos = _camera_pos - 0.1 * cam_depth_axis;
+			_camera_lookat = _camera_lookat - 0.1 * cam_depth_axis;
+	}
+	if (fshowCameraPose)
+	{
+			cout << endl;
+			cout << "camera position : " << _camera_pos.transpose() << endl;
+			cout << "camera lookat : " << _camera_lookat.transpose() << endl;
+			cout << endl;
+	}
+	if (fRotPanTilt)
+	{
+			// get current cursor position
+			double cursorx, cursory;
+			glfwGetCursorPos(_window, &cursorx, &cursory);
+			// TODO: might need to re-scale from screen units to physical units
+			double compass = 0.006 * (cursorx - _last_cursorx);
+			double azimuth = 0.006 * (cursory - _last_cursory);
+			double radius = (_camera_pos - _camera_lookat).norm();
+			Matrix3d m_tilt;
+			m_tilt = AngleAxisd(azimuth, -cam_roll_axis);
+			_camera_pos = _camera_lookat + m_tilt * (_camera_pos - _camera_lookat);
+			Matrix3d m_pan;
+			m_pan = AngleAxisd(compass, -cam_up_axis);
+			_camera_pos = _camera_lookat + m_pan * (_camera_pos - _camera_lookat);
+	}
+	setCameraPose(camera_name, _camera_pos, cam_up_axis, _camera_lookat);
+	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 }
 
 static void updateGraphicsLink(cRobotLink* link, Sai2Model::Sai2Model* robot_model) {
@@ -141,7 +357,16 @@ void Sai2Graphics::render(const std::string& camera_name,
 	// render view from this camera
 	// NOTE: we don't use the display context id right now since chai no longer
 	// supports it in 3.2.0
-	camera->renderView(window_width, window_height);
+	int width = _window_width;
+	int height = _window_height;
+	// For backwards compatibility with existing applications
+	if(window_width != 0) {
+		width = window_width;
+	}
+	if(window_height != 0) {
+		height = window_height;
+	}
+	camera->renderView(width, height);
 }
 
 // get current camera pose
