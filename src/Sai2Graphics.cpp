@@ -24,6 +24,7 @@ namespace
 	bool fTransZn = false;
 	bool fRotPanTilt = false;
 	bool fshowCameraPose = false;
+	bool fRobotLinkSelect = false;
 
 	// callback to print glfw errors
 	void glfwError(int error, const char *description)
@@ -79,9 +80,9 @@ namespace
 		case GLFW_MOUSE_BUTTON_LEFT:
 			fRotPanTilt = set;
 			break;
-		// if right click: don't handle. this is for menu selection
+		// right click to interact with robot by applying forces
 		case GLFW_MOUSE_BUTTON_RIGHT:
-			// TODO: menu
+			fRobotLinkSelect = set;
 			break;
 		// if middle click: don't handle. doesn't work well on laptops
 		case GLFW_MOUSE_BUTTON_MIDDLE:
@@ -172,7 +173,29 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	glfwSetMouseButtonCallback(_window, mouseClick);
 }
 
+void Sai2Graphics::addUIForceInteraction(const std::string& robot_name, Sai2Model::Sai2Model* robot_model) {
+	for(auto widget : _ui_force_widgets) {
+		if(robot_name == widget->getRobotName()) {
+			return;
+		}
+	}
+	chai3d::cShapeLine* display_line = new chai3d::cShapeLine();
+	_ui_force_widgets.push_back(new UIForceWidget(robot_name, robot_model, display_line));
+	_world->addChild(display_line);
+}
+
+void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& ret_torques) {
+	ret_torques.setZero();
+	for(auto widget : _ui_force_widgets) {
+		if(robot_name == widget->getRobotName()) {
+			ret_torques = widget->getUIJointTorques();
+			return;
+		}
+	}
+}
+
 void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
+{
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
 	glfwSwapBuffers(_window);
@@ -249,6 +272,21 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	setCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
+	// allows the user to drag on a link and apply a force
+	for(auto widget : _ui_force_widgets) {
+		widget->setEnable(fRobotLinkSelect);
+	}
+	if (fRobotLinkSelect) {
+		int wwidth_scr, wheight_scr;
+		glfwGetWindowSize(_window, &wwidth_scr, &wheight_scr);
+
+		int viewx = floor(_last_cursorx / wwidth_scr * _window_width);
+		int viewy = floor(_last_cursory / wheight_scr * _window_height);
+
+		for(auto widget : _ui_force_widgets) {
+			widget->setInteractionParams(getCamera(camera_name), viewx, _window_height - viewy, _window_width, _window_height);
+		}
+	}
 	render(camera_name);
 }
 
