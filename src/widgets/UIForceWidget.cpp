@@ -11,7 +11,7 @@ namespace Sai2Graphics {
 
 UIForceWidget::UIForceWidget(const std::string& robot_name,
                              Sai2Model::Sai2Model* robot,
-                             chai3d::cShapeLine* display_line)
+                             std::shared_ptr<chai3d::cShapeLine> display_line)
     : _robot_name(robot_name), _robot(robot), _display_line(display_line) {
   _display_line->setShowEnabled(false);
   // TODO: set default line display properties

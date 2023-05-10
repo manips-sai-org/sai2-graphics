@@ -179,9 +179,9 @@ void Sai2Graphics::addUIForceInteraction(const std::string& robot_name, Sai2Mode
 			return;
 		}
 	}
-	chai3d::cShapeLine* display_line = new chai3d::cShapeLine();
-	_ui_force_widgets.push_back(new UIForceWidget(robot_name, robot_model, display_line));
-	_world->addChild(display_line);
+	std::shared_ptr<chai3d::cShapeLine> display_line = std::make_shared<chai3d::cShapeLine>();
+	_world->addChild(display_line.get());
+	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(robot_name, robot_model, display_line));
 }
 
 void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& ret_torques) {

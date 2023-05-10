@@ -234,7 +234,7 @@ private:
       * torques when right clicking and dragging the mouse on the display window
       * 
       */
-     std::vector<UIForceWidget*> _ui_force_widgets;
+     std::vector<std::shared_ptr<UIForceWidget>> _ui_force_widgets;
 
      /**
       * @brief maps from robot names to filename and from robot names to robot models
