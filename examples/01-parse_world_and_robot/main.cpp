@@ -17,18 +17,17 @@ int main() {
 
 	// load graphics scene
 	auto graphics = new Sai2Graphics::Sai2Graphics(world_file, true);
-    graphics->initializeWindow();
+	graphics->initializeWindow();
 
-    // while window is open:
-    while (graphics->isWindowOpen())
-	{
-		// update graphics the rendering and the window display. 
-        // this automatically waits for the correct amount of time
+	// while window is open:
+	while (graphics->isWindowOpen()) {
+		// update graphics the rendering and the window display.
+		// this automatically waits for the correct amount of time
 		graphics->render(camera_name);
-        graphics->updateWindowWithCameraView(camera_name);
+		graphics->updateWindowWithCameraView(camera_name);
 	}
 
-    graphics->closeWindow();
+	graphics->closeWindow();
 
 	return 0;
 }

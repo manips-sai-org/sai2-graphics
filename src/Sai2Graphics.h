@@ -29,14 +29,38 @@ public:
 	// dtor
 	~Sai2Graphics();
 
+     // TODO: make part of the constructor (but it will break backwards compatibility)
+     /**
+      * @brief initialize the glfw window with the given window name
+      * 
+      * @param window_name 
+      */
      void initializeWindow(const std::string& window_name = "sai2 world");
 
+     /**
+      * @brief destroys then glfw context and close the window
+      * 
+      */
      void closeWindow();
 
+     /**
+      * @brief returns true is the window is open and should stay open
+      * 
+      * @return true 
+      * @return false 
+      */
      bool isWindowOpen() {
           return !glfwWindowShouldClose(_window);
      }
 
+     /**
+      * @brief updates the window display with the most current information
+      * needs to ba called after updateGraphics, updateObjectGraphics
+      * (and render for now) if the changes of robot or object positions are to be
+      * displayed
+      * 
+      * @param camera_name the name of the camera to display
+      */
      void updateWindowWithCameraView(const std::string &camera_name);
 
 	/**
@@ -57,6 +81,7 @@ public:
                          const Eigen::Vector3d& object_pos,
                          const Eigen::Quaterniond object_ori);
 
+     // TODO: make part of updateWindowWithCameraView (will break backwards compatibility)
 	/**
      * @brief Render the virtual world to the current context.
      * 	NOTE: the correct context should have been selected prior to this.
@@ -164,14 +189,25 @@ public:
       * @brief position and direction of view for current camera
       * 
       */
-	Vector3d _camera_pos, _camera_lookat;
 
-	double _last_cursorx, _last_cursory;
+     /**
+      * @brief position of the camera and lookat point
+      * 
+      */
+	Vector3d _camera_pos;
+     Vector3d _camera_lookat_point;
+     Vector3d _camera_up_axis;
 
-     int _window_width, _window_height;
+     /**
+      * @brief used to store the last cursor position
+      * useful when interacting with the window to move the camera
+      * 
+      */
+	double _last_cursorx;
+     double _last_cursory;
 
-
-     std::string _current_camera_name;
+     int _window_width;
+     int _window_height;
 
 public:
      /**

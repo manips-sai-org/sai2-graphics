@@ -78,13 +78,6 @@ namespace
 		// left click pans and tilts
 		case GLFW_MOUSE_BUTTON_LEFT:
 			fRotPanTilt = set;
-			// NOTE: the code below is recommended but doesn't work well
-			// if (fRotPanTilt) {
-			// 	// lock cursor
-			// 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			// } else {
-			// 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			// }
 			break;
 		// if right click: don't handle. this is for menu selection
 		case GLFW_MOUSE_BUTTON_RIGHT:
@@ -119,7 +112,7 @@ namespace
 		int windowPosY = (screenH - windowH) / 2;
 		int windowPosX = windowPosY;
 
-		// create window and make it current
+		// create window and make it current context
 		glfwWindowHint(GLFW_VISIBLE, 0);
 		GLFWwindow *window = glfwCreateWindow(windowW, windowH, window_name.c_str(), NULL, NULL);
 		glfwSetWindowPos(window, windowPosX, windowPosY);
@@ -145,10 +138,9 @@ Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
 
 // dtor
 Sai2Graphics::~Sai2Graphics() {
+    closeWindow();
 	delete _world;
-	delete _window;
 	_world = NULL;	
-	_window = NULL;	
 }
 
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
@@ -164,8 +156,7 @@ void Sai2Graphics::closeWindow() {
 	glfwTerminate();
 }
 
-void Sai2Graphics::updateWindowWithCameraView(const std::string &camera_name)
-{
+void Sai2Graphics::updateWindowWithCameraView(const std::string &camera_name) {
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
 	glfwSwapBuffers(_window);
@@ -175,73 +166,71 @@ void Sai2Graphics::updateWindowWithCameraView(const std::string &camera_name)
 	glfwPollEvents();
 
 	// move scene camera as required
-	Vector3d dummy_camera_vertical;
-	getCameraPose(camera_name, _camera_pos, dummy_camera_vertical, _camera_lookat);
-	Vector3d cam_depth_axis;
-	cam_depth_axis = _camera_lookat - _camera_pos;
+	getCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
+	Vector3d cam_depth_axis = _camera_lookat_point - _camera_pos;
 	cam_depth_axis.normalize();
-	Vector3d cam_up_axis;
-	cam_up_axis << 0.0, 0.0, 1.0; // TODO: there might be a better way to do this
-	Vector3d cam_roll_axis = (_camera_lookat - _camera_pos).cross(cam_up_axis);
-	cam_roll_axis.normalize();
-	Vector3d cam_lookat_axis = _camera_lookat;
-	cam_lookat_axis.normalize();
+	// Vector3d cam_up_axis;
+	// cam_up_axis << 0.0, 0.0, 1.0; // TODO: there might be a better way to do this
+	Vector3d cam_right_axis = cam_depth_axis.cross(_camera_up_axis);
+	cam_right_axis.normalize();
+	// Vector3d cam_lookat_axis = _camera_lookat;
+	// cam_lookat_axis.normalize();
 	if (fTransXp)
 	{
-			_camera_pos = _camera_pos + 0.05 * cam_roll_axis;
-			_camera_lookat = _camera_lookat + 0.05 * cam_roll_axis;
+			_camera_pos += 0.05 * cam_right_axis;
+			_camera_lookat_point += 0.05 * cam_right_axis;
 	}
 	if (fTransXn)
 	{
-			_camera_pos = _camera_pos - 0.05 * cam_roll_axis;
-			_camera_lookat = _camera_lookat - 0.05 * cam_roll_axis;
+			_camera_pos -= 0.05 * cam_right_axis;
+			_camera_lookat_point -= 0.05 * cam_right_axis;
 	}
 	if (fTransYp)
 	{
-			// _camera_pos = _camera_pos + 0.05*cam_lookat_axis;
-			_camera_pos = _camera_pos + 0.05 * cam_up_axis;
-			_camera_lookat = _camera_lookat + 0.05 * cam_up_axis;
+			_camera_pos += 0.05 * _camera_up_axis;
+			_camera_lookat_point += 0.05 * _camera_up_axis;
 	}
 	if (fTransYn)
 	{
-			// _camera_pos = _camera_pos - 0.05*cam_lookat_axis;
-			_camera_pos = _camera_pos - 0.05 * cam_up_axis;
-			_camera_lookat = _camera_lookat - 0.05 * cam_up_axis;
+			_camera_pos -= 0.05 * _camera_up_axis;
+			_camera_lookat_point -= 0.05 * _camera_up_axis;
 	}
 	if (fTransZp)
 	{
-			_camera_pos = _camera_pos + 0.1 * cam_depth_axis;
-			_camera_lookat = _camera_lookat + 0.1 * cam_depth_axis;
+			_camera_pos += 0.1 * cam_depth_axis;
+			_camera_lookat_point += 0.1 * cam_depth_axis;
 	}
 	if (fTransZn)
 	{
-			_camera_pos = _camera_pos - 0.1 * cam_depth_axis;
-			_camera_lookat = _camera_lookat - 0.1 * cam_depth_axis;
+			_camera_pos -= 0.1 * cam_depth_axis;
+			_camera_lookat_point -= 0.1 * cam_depth_axis;
 	}
 	if (fshowCameraPose)
 	{
 			cout << endl;
 			cout << "camera position : " << _camera_pos.transpose() << endl;
-			cout << "camera lookat : " << _camera_lookat.transpose() << endl;
+			cout << "camera lookat point : " << _camera_lookat_point.transpose() << endl;
+			cout << "camera up axis : " << _camera_up_axis.transpose() << endl;
 			cout << endl;
 	}
 	if (fRotPanTilt)
 	{
-			// get current cursor position
-			double cursorx, cursory;
-			glfwGetCursorPos(_window, &cursorx, &cursory);
-			// TODO: might need to re-scale from screen units to physical units
-			double compass = 0.006 * (cursorx - _last_cursorx);
-			double azimuth = 0.006 * (cursory - _last_cursory);
-			double radius = (_camera_pos - _camera_lookat).norm();
-			Matrix3d m_tilt;
-			m_tilt = AngleAxisd(azimuth, -cam_roll_axis);
-			_camera_pos = _camera_lookat + m_tilt * (_camera_pos - _camera_lookat);
-			Matrix3d m_pan;
-			m_pan = AngleAxisd(compass, -cam_up_axis);
-			_camera_pos = _camera_lookat + m_pan * (_camera_pos - _camera_lookat);
+		// get current cursor position
+		double cursorx, cursory;
+		glfwGetCursorPos(_window, &cursorx, &cursory);
+		// TODO: might need to re-scale from screen units to physical units
+		double compass = 0.006 * (cursorx - _last_cursorx);
+		double azimuth = 0.006 * (cursory - _last_cursory);
+		double radius = cam_depth_axis.norm();
+		Matrix3d m_tilt;
+		m_tilt = AngleAxisd(azimuth, -cam_right_axis);
+		_camera_pos = _camera_lookat_point + m_tilt * (_camera_pos - _camera_lookat_point);
+		Matrix3d m_pan;
+		m_pan = AngleAxisd(compass, -_camera_up_axis);
+		_camera_pos = _camera_lookat_point + m_pan * (_camera_pos - _camera_lookat_point);
+		_camera_up_axis = m_pan * _camera_up_axis;
 	}
-	setCameraPose(camera_name, _camera_pos, cam_up_axis, _camera_lookat);
+	setCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 }
 
@@ -372,25 +361,25 @@ void Sai2Graphics::render(const std::string& camera_name,
 // get current camera pose
 void Sai2Graphics::getCameraPose(const std::string& camera_name,
 									Eigen::Vector3d& ret_position,
-									Eigen::Vector3d& ret_vertical,
-									Eigen::Vector3d& ret_lookat) {
+									Eigen::Vector3d& ret_vertical_axis,
+									Eigen::Vector3d& ret_lookat_point) {
 	auto camera = getCamera(camera_name);
 	cVector3d pos, vert, lookat;
 	pos = camera->getLocalPos(); ret_position << pos.x(), pos.y(), pos.z();
-	vert = camera->getUpVector(); ret_vertical << vert.x(), vert.y(), vert.z();
-	lookat = camera->getLookVector(); ret_lookat << lookat.x(), lookat.y(), lookat.z();
-	ret_lookat += ret_position;
+	vert = camera->getUpVector(); ret_vertical_axis << vert.x(), vert.y(), vert.z();
+	lookat = camera->getLookVector(); ret_lookat_point << lookat.x(), lookat.y(), lookat.z();
+	ret_lookat_point += ret_position;
 }
 
 // set camera pose
 void Sai2Graphics::setCameraPose(const std::string& camera_name,
 									const Eigen::Vector3d& position,
-									const Eigen::Vector3d& vertical,
-									const Eigen::Vector3d& lookat) {
+									const Eigen::Vector3d& vertical_axis,
+									const Eigen::Vector3d& lookat_point) {
  	auto camera = getCamera(camera_name);
 	cVector3d pos(position[0], position[1], position[2]);
-	cVector3d vert(vertical[0], vertical[1], vertical[2]);
-	cVector3d look(lookat[0], lookat[1], lookat[2]);
+	cVector3d vert(vertical_axis[0], vertical_axis[1], vertical_axis[2]);
+	cVector3d look(lookat_point[0], lookat_point[1], lookat_point[2]);
 	camera->set(pos, look, vert);
 }
 
@@ -597,7 +586,7 @@ void Sai2Graphics::showLinkFrame(bool show_frame,
 
 // Show wire mesh for a particular link or all links on a robot.
 void Sai2Graphics::showWireMeshRender(bool show_wiremesh,
-                         			const std::string& robot_name,
+									const std::string& robot_name,
 									const std::string& link_name) {
 	bool fShouldApplyAllLinks = false;
 	if (link_name.empty()) {
