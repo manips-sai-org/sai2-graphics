@@ -31,6 +31,14 @@ public:
 	~Sai2Graphics();
 
      /**
+      * @brief resets the rendered world and re initializes it with the new world file
+      * 
+      * @param path_to_world_file world file to render
+      * @param verbose print info to terminal or not
+      */
+     void resetWorld(const std::string& path_to_world_file, const bool verbose = false);
+
+     /**
       * @brief returns true is the window is open and should stay open
       * 
       * @return true 
