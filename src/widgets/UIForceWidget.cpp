@@ -21,7 +21,9 @@ UIForceWidget::UIForceWidget(const std::string& robot_name,
 
   // TODO: update defaults parameters below
   _max_force = 20;  // N
-  _spring_k = 20;   // N/m
+  _lin_spring_k = 20;   // N/m
+  _max_moment = 2;  // Nm
+  _rot_spring_k = 2;   // Nm/Rad
 }
 
 // enable or disable
@@ -145,37 +147,44 @@ bool UIForceWidget::getRobotLinkInCamera(chai3d::cCamera* camera, int view_x,
 }
 
 // get interaction force
-Eigen::Vector3d UIForceWidget::getUIForce() const {
+Eigen::Vector3d UIForceWidget::getUIForceOrMoment(const bool is_force) const {
   // nothing to do if state is not active
   if (_state == Disabled || _state == Inactive) {
     return Eigen::Vector3d::Zero();
   }
 
+  double stiffness = is_force ? _lin_spring_k : _rot_spring_k;
+  double max = is_force ? _max_force : _max_moment;
+
   // calculate spring force in global frame
   cVector3d temp = _display_line->m_pointB - _display_line->m_pointA;
-  Eigen::Vector3d force = temp.eigen();
-  force = force * _spring_k;
+  Eigen::Vector3d force_or_moment = temp.eigen();
+  force_or_moment = force_or_moment * stiffness;
 
-  // adjust to keep below max force
-  if (force.norm() > _max_force) {
-    force.normalize();
-    force = force * _max_force;
+  // adjust to keep below max force_or_moment
+  if (force_or_moment.norm() > max) {
+    force_or_moment.normalize();
+    force_or_moment = force_or_moment * max;
   }
-  return force;
+  return force_or_moment;
 }
 
 // get interaction joint torques
-Eigen::VectorXd UIForceWidget::getUIJointTorques() const {
+Eigen::VectorXd UIForceWidget::getUIJointTorques(const bool is_force_applied) const {
   // nothing to do if state is not active
   if (_state == Disabled || _state == Inactive) {
     return Eigen::VectorXd::Zero(_robot->dof());
   }
 
-  Eigen::Vector3d force = getUIForce();
-  // compute Jv'F for the force
-  Eigen::MatrixXd Jv;
-  _robot->Jv(Jv, _link_name, _link_local_pos);
-  return (Jv.transpose() * force);
+  Eigen::Vector3d force_or_moment = getUIForceOrMoment(is_force_applied);
+
+  Eigen::MatrixXd J;
+  if(is_force_applied) {
+    _robot->Jv(J, _link_name, _link_local_pos);
+  } else {
+    _robot->Jw(J, _link_name);
+  }
+  return (J.transpose() * force_or_moment);
 }
 
 }  // namespace Sai2Graphics

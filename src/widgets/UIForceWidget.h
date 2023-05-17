@@ -40,11 +40,11 @@ namespace Sai2Graphics
 		bool setInteractionParams(chai3d::cCamera *camera, int viewx, int viewy,
 								  int window_width, int window_height);
 
-		// get interaction force
-		Eigen::Vector3d getUIForce() const;
+		// get interaction force/moment
+		Eigen::Vector3d getUIForceOrMoment(const bool is_force) const;
 
 		// get interaction joint torques
-		Eigen::VectorXd getUIJointTorques() const;
+		Eigen::VectorXd getUIJointTorques(const bool is_force_applied) const;
 
 		const std::string getRobotName() { return _robot_name; }
 
@@ -88,11 +88,13 @@ namespace Sai2Graphics
 		// current state of the widget
 		UIForceWidgetState _state;
 
-		// spring constant to use to calculate force
-		double _spring_k;
+		// spring constant to use to calculate force/moment
+		double _lin_spring_k;
+		double _rot_spring_k;
 
-		// maximum allowable force
+		// maximum allowable force/moment
 		double _max_force;
+		double _max_moment;
 
 		// link on which force is being applied
 		std::string _link_name;
