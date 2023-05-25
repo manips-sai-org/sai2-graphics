@@ -61,10 +61,10 @@ public:
 	/**
      * @brief Update the graphics model for a robot in the virtual world.
      * @param robot_name Name of the robot for which model update is considered.
-     * @param robot_model A ModelInterface object for this robot to be used to get intermediate transforms.
+     * @param joint_angles joint angles for that robot
      */
-	void updateGraphics(const std::string& robot_name,
-						Sai2Model::Sai2Model* robot_model);
+	void updateRobotGraphics(const std::string& robot_name,
+						const Eigen::VectorXd& joint_angles);
 
      /**
      * @brief Update the graphics model for an object in the virtual world.
@@ -75,6 +75,8 @@ public:
      void updateObjectGraphics(const std::string& object_name,
                          const Eigen::Vector3d& object_pos,
                          const Eigen::Quaterniond object_ori);
+
+     Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 
      /**
      * @brief Show frame for a particular link or all links on a robot.
@@ -102,6 +104,10 @@ public:
                          const std::string& link_name = "");
 
 private:
+     
+     void initializeWorld(const std::string& path_to_world_file, const bool verbose);
+     void clearWorld();
+     
      /**
       * @brief initialize the glfw window with the given window name
       * 
@@ -194,9 +200,11 @@ private:
      GLFWwindow* _window;
 
      /**
-      * @brief position and direction of view for current camera
+      * @brief maps from robot names to filename and from robot names to robot models
       * 
       */
+     std::map<std::string, std::string> _robot_filenames;
+     std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
 
      /**
       * @brief position of the camera and lookat point

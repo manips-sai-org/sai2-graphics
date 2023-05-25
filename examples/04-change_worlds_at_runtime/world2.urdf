@@ -4,14 +4,14 @@
 
 	<robot name="RBot">
 		<!-- model node is required -->
-		<model dir="resources" path="rbot.urdf" name="RBot" />
+		<model dir="resources" path="rbot.urdf" name="RBot_description" />
 		<!-- origin node is optional -->
 		<origin xyz="0.0 -1.2 0.0" rpy="0 0 0" />
 	</robot>
 
 	<robot name="RBot2">
 		<!-- model node is required -->
-		<model dir="resources" path="rbot.urdf" name="RBot" />
+		<model dir="resources" path="rbot.urdf" name="RBot_description" />
 		<!-- origin node is optional -->
 		<origin xyz="0.0 1.2 0.0" rpy="0 0 0" />
 	</robot>

@@ -133,8 +133,7 @@ Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
 							bool verbose)
 {
 	// initialize a chai world
-	_world = new chai3d::cWorld();
-	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, verbose);
+	initializeWorld(path_to_world_file, verbose);
 	initializeWindow(window_name);
 }
 
@@ -142,14 +141,27 @@ Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
 Sai2Graphics::~Sai2Graphics() {
 	glfwDestroyWindow(_window);
 	glfwTerminate();
-	delete _world;
+	clearWorld();
 	_world = NULL;	
 }
 
 void Sai2Graphics::resetWorld(const std::string& path_to_world_file, const bool verbose) {
-	delete _world;
+	clearWorld();
+	initializeWorld(path_to_world_file, verbose);
+}
+
+void Sai2Graphics::initializeWorld(const std::string& path_to_world_file, const bool verbose) {
 	_world = new chai3d::cWorld();
-	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, verbose);
+	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, _robot_filenames, verbose);
+	for(auto robot_filename : _robot_filenames) {
+		_robot_models[robot_filename.first] = std::make_shared<Sai2Model::Sai2Model>(robot_filename.second);
+	}
+}
+
+void Sai2Graphics::clearWorld() {
+	delete _world;
+	_robot_filenames.clear();
+	_robot_models.clear();
 }
 
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
@@ -240,7 +252,7 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	render(camera_name);
 }
 
-static void updateGraphicsLink(cRobotLink* link, Sai2Model::Sai2Model* robot_model) {
+static void updateGraphicsLink(cRobotLink* link, std::shared_ptr<Sai2Model::Sai2Model> robot_model) {
 	cVector3d local_pos;
 	cMatrix3d local_rot;
 
@@ -284,8 +296,20 @@ static void updateGraphicsLink(cRobotLink* link, Sai2Model::Sai2Model* robot_mod
 }
 
 // update frame for a particular robot
-void Sai2Graphics::updateGraphics(const std::string& robot_name,
-									Sai2Model::Sai2Model* robot_model) {
+void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
+									const Eigen::VectorXd& joint_angles) {
+	// update corresponfing robot model
+	auto it = _robot_models.find(robot_name);
+	if(it == _robot_models.end()) {
+		throw std::invalid_argument("Robot not found in Sai2Graphics::updateRobotGraphics");
+	}
+	auto robot_model = _robot_models[robot_name];
+	if(joint_angles.size() != robot_model->q_size()) {
+		throw std::invalid_argument("size of joint angles inconsistent with robot model in Sai2Graphics::updateRobotGraphics");
+	}
+	robot_model->set_q(joint_angles);
+	robot_model->updateKinematics();
+	
 	// get robot base object in chai world
 	cRobotBase* base = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
@@ -337,9 +361,16 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 	// update pose
 	object->setLocalPos(object_pos);
 	object->setLocalRot(object_ori.toRotationMatrix());
-
-
 }
+
+Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {
+	auto it = _robot_models.find(robot_name);
+	if(it == _robot_models.end()) {
+		throw std::invalid_argument("robot not found in Sai2Graphics::getRobotJointPos");
+	}
+	return _robot_models[robot_name]->q();
+}
+
 
 void Sai2Graphics::render(const std::string& camera_name) {
 	auto camera = getCamera(camera_name);
