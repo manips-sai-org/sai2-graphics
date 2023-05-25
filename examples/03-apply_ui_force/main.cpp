@@ -10,7 +10,6 @@
 using namespace std;
 
 const string world_file = "resources/world.urdf";
-const string robot_file = "resources/rbot.urdf";
 const string robot_name = "RBot";
 const string camera_name = "camera_fixed";
 
@@ -18,31 +17,21 @@ int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file, true);
-    graphics->initializeWindow();
-
-    // load robot
-    auto robot = new Sai2Model::Sai2Model(robot_file, false);
-    int dof = robot->dof();
-    robot->_q.setZero();
-    robot->_dq.setZero();
+	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
+    Eigen::VectorXd q_robot = graphics->getRobotJointPos(robot_name);
 
     // set up ui force interaction
-    graphics->addUIForceInteraction(robot_name, robot);
-    Eigen::VectorXd ui_interaction_torques = Eigen::VectorXd::Zero(dof);
+    graphics->addUIForceInteraction(robot_name);
+    Eigen::VectorXd ui_interaction_torques;
 
     unsigned long long counter = 0;
 
     // while window is open:
     while (graphics->isWindowOpen())
 	{
-        // update robot position
-        robot->updateKinematics();
-
 		// update graphics rendering and window contents
-        graphics->updateGraphics(robot_name, robot);
-		graphics->render(camera_name);
-        graphics->updateWindowWithCameraView(camera_name);
+        graphics->updateRobotGraphics(robot_name, q_robot);
+        graphics->updateDisplayedWorld(camera_name);
         graphics->getUITorques(robot_name, ui_interaction_torques);
 
         if(counter % 50 == 0) {
@@ -51,8 +40,6 @@ int main() {
 
         counter++;
 	}
-
-    graphics->closeWindow();
 
 	return 0;
 }

@@ -180,7 +180,11 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	glfwSetMouseButtonCallback(_window, mouseClick);
 }
 
-void Sai2Graphics::addUIForceInteraction(const std::string& robot_name, Sai2Model::Sai2Model* robot_model) {
+void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
+	auto it = _robot_models.find(robot_name);
+	if(it == _robot_models.end()) {
+		throw std::invalid_argument("robot not found in Sai2Graphics::addUIForceInteraction");
+	}
 	for(auto widget : _ui_force_widgets) {
 		if(robot_name == widget->getRobotName()) {
 			return;
@@ -188,7 +192,7 @@ void Sai2Graphics::addUIForceInteraction(const std::string& robot_name, Sai2Mode
 	}
 	std::shared_ptr<chai3d::cShapeLine> display_line = std::make_shared<chai3d::cShapeLine>();
 	_world->addChild(display_line.get());
-	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(robot_name, robot_model, display_line));
+	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(robot_name, _robot_models[robot_name], display_line));
 }
 
 void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& ret_torques) {
@@ -202,7 +206,6 @@ void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& 
 }
 
 void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
-{
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
 	glfwSwapBuffers(_window);

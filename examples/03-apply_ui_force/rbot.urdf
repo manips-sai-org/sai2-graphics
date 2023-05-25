@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!--simple pbot-->
 
-<robot name="RBot">
+<robot name="RBot_description">
     <link name="base_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />

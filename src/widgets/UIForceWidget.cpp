@@ -10,7 +10,7 @@ using namespace std;
 namespace Sai2Graphics {
 
 UIForceWidget::UIForceWidget(const std::string& robot_name,
-                             Sai2Model::Sai2Model* robot,
+                             std::shared_ptr<Sai2Model::Sai2Model> robot,
                              std::shared_ptr<chai3d::cShapeLine> display_line)
     : _robot_name(robot_name), _robot(robot), _display_line(display_line) {
   _display_line->setShowEnabled(false);

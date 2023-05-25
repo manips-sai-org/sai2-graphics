@@ -26,7 +26,7 @@ namespace Sai2Graphics
 
 	public:
 		// ctor
-		UIForceWidget(const std::string &robot_name, Sai2Model::Sai2Model *robot,
+		UIForceWidget(const std::string &robot_name, std::shared_ptr<Sai2Model::Sai2Model> robot,
 					  std::shared_ptr<chai3d::cShapeLine> display_line);
 
 		// set state
@@ -80,7 +80,7 @@ namespace Sai2Graphics
 		std::string _robot_name;
 
 		// robot model this UIForceWidget is associated with
-		Sai2Model::Sai2Model *_robot;
+		std::shared_ptr<Sai2Model::Sai2Model> _robot;
 
 		// handle to graphics interface to query interaction state change
 		// Sai2Graphics* _graphics;

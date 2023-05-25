@@ -84,7 +84,7 @@ public:
       * @param robot_name name of the robot
       * @param robot_model model of the robot
       */
-     void addUIForceInteraction(const std::string& robot_name, Sai2Model::Sai2Model* robot_model);
+     void addUIForceInteraction(const std::string& robot_name);
 
 	/**
      * @brief Update the graphics model for a robot in the virtual world.
