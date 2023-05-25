@@ -16,18 +16,14 @@ int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file, true);
-	graphics->initializeWindow();
+	auto graphics = new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		// update graphics the rendering and the window display.
 		// this automatically waits for the correct amount of time
-		graphics->render(camera_name);
-		graphics->updateWindowWithCameraView(camera_name);
+		graphics->updateDisplayedWorld(camera_name);
 	}
-
-	graphics->closeWindow();
 
 	return 0;
 }

@@ -24,24 +24,11 @@ public:
      * @param verbose To display information about the robot model creation in the terminal or not.
      */
 	Sai2Graphics(const std::string& path_to_world_file,
-					bool verbose = false);
+               const std::string& window_name = "sai2 world",
+               bool verbose = false);
 
 	// dtor
 	~Sai2Graphics();
-
-     // TODO: make part of the constructor (but it will break backwards compatibility)
-     /**
-      * @brief initialize the glfw window with the given window name
-      * 
-      * @param window_name 
-      */
-     void initializeWindow(const std::string& window_name = "sai2 world");
-
-     /**
-      * @brief destroys then glfw context and close the window
-      * 
-      */
-     void closeWindow();
 
      /**
       * @brief returns true is the window is open and should stay open
@@ -61,7 +48,7 @@ public:
       * 
       * @param camera_name the name of the camera to display
       */
-     void updateWindowWithCameraView(const std::string &camera_name);
+     void updateDisplayedWorld(const std::string &camera_name);
 
 	/**
      * @brief Update the graphics model for a robot in the virtual world.
@@ -81,7 +68,39 @@ public:
                          const Eigen::Vector3d& object_pos,
                          const Eigen::Quaterniond object_ori);
 
-     // TODO: make part of updateWindowWithCameraView (will break backwards compatibility)
+     /**
+     * @brief Show frame for a particular link or all links on a robot.
+          This also causes the link graphics as well as graphics for any 
+          child link to be displayed as wire mesh to allow the frame to be
+          seen.
+     * @param show_frame Flag whether should show frame or not.
+     * @param robot_name Robot name.
+     * @param robot_name Link name. If left blank, all link frames are shown.
+     * @param frame_pointer_length Axis arrow length in meters.
+     */
+     void showLinkFrame(bool show_frame,
+                         const std::string& robot_name,
+                         const std::string& link_name = "",
+                         const double frame_pointer_length = 0.03);
+
+     /**
+     * @brief Render wire mesh for a particular link or all links on a robot.
+     * @param show_wiremesh Flag whether should show wire mesh or not.
+     * @param robot_name Robot name.
+     * @param robot_name Link name. If left blank, all link frames are shown.
+     */
+     void showWireMeshRender(bool show_wiremesh,
+                         const std::string& robot_name,
+                         const std::string& link_name = "");
+
+private:
+     /**
+      * @brief initialize the glfw window with the given window name
+      * 
+      * @param window_name 
+      */
+     void initializeWindow(const std::string& window_name);
+
 	/**
      * @brief Render the virtual world to the current context.
      * 	NOTE: the correct context should have been selected prior to this.
@@ -91,10 +110,7 @@ public:
      * @param display_context_id ID for the context to display in. This ID is only to be used
      *	for selective rendering. It does not change the GL context to render to.
      */
-	void render(const std::string& camera_name,
-				int window_width = 0, 
-				int window_height = 0, 
-				int display_context_id = 0);
+	void render(const std::string& camera_name);
 
      /**
      * @brief Return the pose of the camera in the parent frame
@@ -149,31 +165,15 @@ public:
      chai3d::cCamera* getCamera(const std::string& camera_name);
 
      /**
-     * @brief Show frame for a particular link or all links on a robot.
-          This also causes the link graphics as well as graphics for any 
-          child link to be displayed as wire mesh to allow the frame to be
-          seen.
-     * @param show_frame Flag whether should show frame or not.
-     * @param robot_name Robot name.
-     * @param robot_name Link name. If left blank, all link frames are shown.
-     * @param frame_pointer_length Axis arrow length in meters.
+     * internal functions to find link
      */
-     void showLinkFrame(bool show_frame,
-                         const std::string& robot_name,
-                         const std::string& link_name = "",
-                         const double frame_pointer_length = 0.03);
+     chai3d::cRobotLink* findLinkObjectInParentLinkRecursive(chai3d::cRobotLink* parent, const std::string& link_name);
 
-     /**
-     * @brief Render wire mesh for a particular link or all links on a robot.
-     * @param show_wiremesh Flag whether should show wire mesh or not.
-     * @param robot_name Robot name.
-     * @param robot_name Link name. If left blank, all link frames are shown.
-     */
-     void showWireMeshRender(bool show_wiremesh,
-                         const std::string& robot_name,
-                         const std::string& link_name = "");
+     chai3d::cRobotLink* findLink(const std::string& robot_name, const std::string& link_name);
 
-public:
+     void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame, const double frame_pointer_length);
+
+
 	/**
      * @brief Internal cWorld object.
      */
@@ -209,17 +209,8 @@ public:
      int _window_width;
      int _window_height;
 
-public:
-     /**
-     * internal functions to find link
-     */
-     chai3d::cRobotLink* findLinkObjectInParentLinkRecursive(chai3d::cRobotLink* parent, const std::string& link_name);
-
-     chai3d::cRobotLink* findLink(const std::string& robot_name, const std::string& link_name);
-
-     void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame, const double frame_pointer_length);
 };
 
-}
+} // namespace
 
 #endif //CHAI_GRAPHICS_H

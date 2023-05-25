@@ -129,16 +129,19 @@ namespace Sai2Graphics
 {
 
 Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
+							const std::string& window_name,
 							bool verbose)
 {
 	// initialize a chai world
 	_world = new chai3d::cWorld();
 	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, verbose);
+	initializeWindow(window_name);
 }
 
 // dtor
 Sai2Graphics::~Sai2Graphics() {
-    closeWindow();
+	glfwDestroyWindow(_window);
+	glfwTerminate();
 	delete _world;
 	_world = NULL;	
 }
@@ -151,12 +154,7 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	glfwSetMouseButtonCallback(_window, mouseClick);
 }
 
-void Sai2Graphics::closeWindow() {
-	glfwDestroyWindow(_window);
-	glfwTerminate();
-}
-
-void Sai2Graphics::updateWindowWithCameraView(const std::string &camera_name) {
+void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
 	glfwSwapBuffers(_window);
@@ -232,6 +230,8 @@ void Sai2Graphics::updateWindowWithCameraView(const std::string &camera_name) {
 	}
 	setCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
+
+	render(camera_name);
 }
 
 static void updateGraphicsLink(cRobotLink* link, Sai2Model::Sai2Model* robot_model) {
@@ -335,10 +335,7 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 
 }
 
-void Sai2Graphics::render(const std::string& camera_name,
-							int window_width, 
-							int window_height, 
-							int display_context_id) {
+void Sai2Graphics::render(const std::string& camera_name) {
 	auto camera = getCamera(camera_name);
 	// TODO: support link mounted cameras
 	// TODO: support stereo. see cCamera::renderView
@@ -346,16 +343,7 @@ void Sai2Graphics::render(const std::string& camera_name,
 	// render view from this camera
 	// NOTE: we don't use the display context id right now since chai no longer
 	// supports it in 3.2.0
-	int width = _window_width;
-	int height = _window_height;
-	// For backwards compatibility with existing applications
-	if(window_width != 0) {
-		width = window_width;
-	}
-	if(window_height != 0) {
-		height = window_height;
-	}
-	camera->renderView(width, height);
+	camera->renderView(_window_width, _window_height);
 }
 
 // get current camera pose
