@@ -24,15 +24,15 @@ int main() {
     // load robot
     auto robot = new Sai2Model::Sai2Model(robot_file, false);
     int dof = robot->dof();
-    robot->_q.setZero();
-    robot->_dq.setZero();
+    Eigen::VectorXd next_q = robot->q();
 
     unsigned long long counter = 0;
 
     // while window is open:
     while (graphics->isWindowOpen()) {
         // update robot position
-        robot->_q << (double)counter / 100.0;
+        next_q << (double) counter/100.0;
+        robot->set_q(next_q);
         robot->updateKinematics();
 
         // update graphics rendering and window contents
