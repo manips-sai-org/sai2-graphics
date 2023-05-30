@@ -4,12 +4,10 @@
 
 	<robot name="RBot">
 		<!-- model node is required -->
-		<model dir="resources" path="rbot.urdf" name="RBot" />
+		<model dir="resources" path="rbot.urdf" name="RBot_description" />
 		<!-- origin node is optional -->
 		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 	</robot>
-
-
 
 	<light name="light1" type="directional">
 		<position xyz="2.0 -2.0 2.0" />

@@ -181,6 +181,7 @@ static void loadVisualtoGenericObject(cGenericObject* object, const my_shared_pt
 
 void UrdfToSai2GraphicsWorld(const std::string& filename,
 							chai3d::cWorld* world,
+							std::map<std::string, std::string>& robot_filenames,
 							bool verbose) {
 	// load world urdf file
 	ifstream model_file (filename);
@@ -233,6 +234,13 @@ void UrdfToSai2GraphicsWorld(const std::string& filename,
 
 		// overwrite robot name with custom name for this instance
 		robot->m_name = robot_spec->name;
+
+		// fill robot filenames
+		auto it = robot_filenames.find(robot->m_name);
+		if(it != robot_filenames.end()) {
+			throw std::runtime_error("Different robots cannot have the same name in the world");
+		}
+		robot_filenames[robot->m_name] = robot_spec->model_working_dir + "/" + robot_spec->model_filename;
 	}
 
 	// parse cameras
