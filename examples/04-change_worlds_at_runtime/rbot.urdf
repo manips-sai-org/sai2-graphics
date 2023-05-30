@@ -1,7 +1,11 @@
 <?xml version="1.0" ?>
 <!--simple pbot-->
 
+<<<<<<< HEAD
 <robot name="RBot_description">
+=======
+<robot name="RBot">
+>>>>>>> master
     <link name="base_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
