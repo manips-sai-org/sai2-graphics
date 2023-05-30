@@ -146,6 +146,12 @@ Sai2Graphics::~Sai2Graphics() {
 	_world = NULL;	
 }
 
+void Sai2Graphics::resetWorld(const std::string& path_to_world_file, const bool verbose) {
+	delete _world;
+	_world = new chai3d::cWorld();
+	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, verbose);
+}
+
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	_window = glfwInitialize(window_name);
 
