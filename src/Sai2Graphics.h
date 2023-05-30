@@ -10,6 +10,7 @@
 
 #include <chai3d.h>
 #include "Sai2Model.h"
+#include "widgets/UIForceWidget.h"
 #include "chai_extension/CRobotLink.h"
 
 #include <GLFW/glfw3.h> //must be loaded after loading opengl/glew
@@ -57,6 +58,33 @@ public:
       * @param camera_name the name of the camera to display
       */
      void updateDisplayedWorld(const std::string &camera_name);
+
+     /**
+      * @brief remove all interactions widgets
+      * after calling that function, right clicking on the window won't 
+      * display lines and generate forces/joint torques
+      * 
+      */
+     void clearUIForceWidgets() {
+          _ui_force_widgets.clear();
+     }
+
+     /**
+      * @brief get the joint torques from the ui interaction (right click on robot link)
+      * for a given robot
+      * 
+      * @param robot_name name of the robot for which we want the joint torques
+      * @param ret_torques joint torques for that robot
+      */
+     void getUITorques(const std::string& robot_name, Eigen::VectorXd& ret_torques);
+
+     /**
+      * @brief Enable interacting with a specific robot by right clicking on the display window
+      * 
+      * @param robot_name name of the robot
+      * @param robot_model model of the robot
+      */
+     void addUIForceInteraction(const std::string& robot_name);
 
 	/**
      * @brief Update the graphics model for a robot in the virtual world.
@@ -150,6 +178,8 @@ private:
                          const Eigen::Vector3d& vertical,
                          const Eigen::Vector3d& lookat);
 
+     
+     // TODO: remove when deprecation period is over
      /**
      * @brief Get info about link of the specified robot at the given cursor position.
      * @return True if a link is present, False if not
@@ -198,6 +228,13 @@ private:
       * 
       */
      GLFWwindow* _window;
+
+     /**
+      * @brief the widgets responsible for handling the computation of joint
+      * torques when right clicking and dragging the mouse on the display window
+      * 
+      */
+     std::vector<std::shared_ptr<UIForceWidget>> _ui_force_widgets;
 
      /**
       * @brief maps from robot names to filename and from robot names to robot models

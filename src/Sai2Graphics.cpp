@@ -23,7 +23,10 @@ namespace
 	bool fTransZp = false;
 	bool fTransZn = false;
 	bool fRotPanTilt = false;
-	bool fshowCameraPose = false;
+	bool fShowCameraPose = false;
+	bool fShowCameraPoseReset = true;
+	bool fRobotLinkSelect = false;
+	bool fShiftPressed = false;
 
 	// callback to print glfw errors
 	void glfwError(int error, const char *description)
@@ -61,8 +64,13 @@ namespace
 			fTransZn = set;
 			break;
 		case GLFW_KEY_S:
-			fshowCameraPose = set;
+			fShowCameraPose = set;
+			if(!fShowCameraPose) {
+				fShowCameraPoseReset = true;
+			}
 			break;
+		case GLFW_KEY_LEFT_SHIFT:
+			fShiftPressed = set;
 		default:
 			break;
 		}
@@ -79,9 +87,9 @@ namespace
 		case GLFW_MOUSE_BUTTON_LEFT:
 			fRotPanTilt = set;
 			break;
-		// if right click: don't handle. this is for menu selection
+		// right click to interact with robot by applying forces
 		case GLFW_MOUSE_BUTTON_RIGHT:
-			// TODO: menu
+			fRobotLinkSelect = set;
 			break;
 		// if middle click: don't handle. doesn't work well on laptops
 		case GLFW_MOUSE_BUTTON_MIDDLE:
@@ -172,6 +180,31 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	glfwSetMouseButtonCallback(_window, mouseClick);
 }
 
+void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
+	auto it = _robot_models.find(robot_name);
+	if(it == _robot_models.end()) {
+		throw std::invalid_argument("robot not found in Sai2Graphics::addUIForceInteraction");
+	}
+	for(auto widget : _ui_force_widgets) {
+		if(robot_name == widget->getRobotName()) {
+			return;
+		}
+	}
+	std::shared_ptr<chai3d::cShapeLine> display_line = std::make_shared<chai3d::cShapeLine>();
+	_world->addChild(display_line.get());
+	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(robot_name, _robot_models[robot_name], display_line));
+}
+
+void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& ret_torques) {
+	ret_torques.setZero();
+	for(auto widget : _ui_force_widgets) {
+		if(robot_name == widget->getRobotName()) {
+			ret_torques = widget->getUIJointTorques(!fShiftPressed);
+			return;
+		}
+	}
+}
+
 void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
@@ -221,8 +254,9 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 			_camera_pos -= 0.1 * cam_depth_axis;
 			_camera_lookat_point -= 0.1 * cam_depth_axis;
 	}
-	if (fshowCameraPose)
+	if (fShowCameraPose && fShowCameraPoseReset)
 	{
+			fShowCameraPoseReset = false;
 			cout << endl;
 			cout << "camera position : " << _camera_pos.transpose() << endl;
 			cout << "camera lookat point : " << _camera_lookat_point.transpose() << endl;
@@ -249,6 +283,21 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	setCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
+	// allows the user to drag on a link and apply a force
+	for(auto widget : _ui_force_widgets) {
+		widget->setEnable(fRobotLinkSelect);
+	}
+	if (fRobotLinkSelect) {
+		int wwidth_scr, wheight_scr;
+		glfwGetWindowSize(_window, &wwidth_scr, &wheight_scr);
+
+		int viewx = floor(_last_cursorx / wwidth_scr * _window_width);
+		int viewy = floor(_last_cursory / wheight_scr * _window_height);
+
+		for(auto widget : _ui_force_widgets) {
+			widget->setInteractionParams(getCamera(camera_name), viewx, _window_height - viewy, _window_width, _window_height);
+		}
+	}
 	render(camera_name);
 }
 
