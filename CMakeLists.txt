@@ -40,6 +40,10 @@ find_package(SAI2-URDF REQUIRED)
 SET(PARSER_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/parser)
 SET(PARSER_SOURCE ${PROJECT_SOURCE_DIR}/src/parser/UrdfToSai2Graphics.cpp)
 
+# - glfw3
+find_package(glfw3 QUIET)
+find_library(GLFW_LIBRARY glfw)
+
 # include Widgets
 SET(WIDGETS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/widgets)
 SET(WIDGETS_SOURCE ${PROJECT_SOURCE_DIR}/src/widgets/UIForceWidget.cpp)
@@ -73,6 +77,7 @@ ADD_LIBRARY (sai2-graphics STATIC
 SET (SAI2-GRAPHICS_LIBRARIES sai2-graphics 
 	${SAI2-URDF_LIBRARIES}
 	${CHAI3D_LIBRARIES}
+	${GLFW_LIBRARY}
 	)
 
 # 

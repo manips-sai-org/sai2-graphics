@@ -131,6 +131,11 @@ public:
                          const std::string& robot_name,
                          const std::string& link_name = "");
 
+     void setBackgroundColor(const double red, const double green,
+                             const double blue) {
+       _world->setBackgroundColor(red, green, blue);
+     }
+
 private:
      
      void initializeWorld(const std::string& path_to_world_file, const bool verbose);
