@@ -26,6 +26,7 @@ namespace
 	bool fShowCameraPose = false;
 	bool fShowCameraPoseReset = true;
 	bool fRobotLinkSelect = false;
+	bool fRobotLinkSelectReset = true;
 	bool fShiftPressed = false;
 
 	// callback to print glfw errors
@@ -90,6 +91,9 @@ namespace
 		// right click to interact with robot by applying forces
 		case GLFW_MOUSE_BUTTON_RIGHT:
 			fRobotLinkSelect = set;
+			if(!fRobotLinkSelect) {
+				fRobotLinkSelectReset = true;
+			}
 			break;
 		// if middle click: don't handle. doesn't work well on laptops
 		case GLFW_MOUSE_BUTTON_MIDDLE:
@@ -150,7 +154,7 @@ Sai2Graphics::~Sai2Graphics() {
 	glfwDestroyWindow(_window);
 	glfwTerminate();
 	clearWorld();
-	_world = NULL;	
+	_world = NULL;
 }
 
 void Sai2Graphics::resetWorld(const std::string& path_to_world_file, const bool verbose) {
@@ -162,7 +166,21 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file, const 
 	_world = new chai3d::cWorld();
 	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, _robot_filenames, verbose);
 	for(auto robot_filename : _robot_filenames) {
-		_robot_models[robot_filename.first] = std::make_shared<Sai2Model::Sai2Model>(robot_filename.second);
+		// get robot base object in chai world
+		cRobotBase* base = NULL;
+		for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+			if (robot_filename.first == _world->getChild(i)->m_name) {
+				// cast to cRobotBase
+				base = dynamic_cast<cRobotBase*>(_world->getChild(i));
+				if (base != NULL) {
+					break;
+				}
+			}
+		}
+		Eigen::Affine3d T_robot_base;
+		T_robot_base.translation() = base->getLocalPos().eigen();
+		T_robot_base.linear() = base->getLocalRot().eigen();
+		_robot_models[robot_filename.first] = std::make_shared<Sai2Model::Sai2Model>(robot_filename.second, false, T_robot_base);
 	}
 }
 
@@ -190,8 +208,8 @@ void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
 			return;
 		}
 	}
-	std::shared_ptr<chai3d::cShapeLine> display_line = std::make_shared<chai3d::cShapeLine>();
-	_world->addChild(display_line.get());
+	chai3d::cShapeLine* display_line = new chai3d::cShapeLine();
+	_world->addChild(display_line);
 	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(robot_name, _robot_models[robot_name], display_line));
 }
 
@@ -284,10 +302,14 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
 	// allows the user to drag on a link and apply a force
-	for(auto widget : _ui_force_widgets) {
-		widget->setEnable(fRobotLinkSelect);
-	}
 	if (fRobotLinkSelect) {
+		if(fRobotLinkSelectReset) {
+			for(auto widget : _ui_force_widgets) {
+				widget->setEnable(true);
+			}			
+			fRobotLinkSelectReset = false;
+		}
+
 		int wwidth_scr, wheight_scr;
 		glfwGetWindowSize(_window, &wwidth_scr, &wheight_scr);
 
@@ -297,6 +319,10 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 		for(auto widget : _ui_force_widgets) {
 			widget->setInteractionParams(getCamera(camera_name), viewx, _window_height - viewy, _window_width, _window_height);
 		}
+	} else {
+		for(auto widget : _ui_force_widgets) {
+			widget->setEnable(false);
+		}	
 	}
 	render(camera_name);
 }

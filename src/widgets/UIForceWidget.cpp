@@ -11,8 +11,9 @@ namespace Sai2Graphics {
 
 UIForceWidget::UIForceWidget(const std::string& robot_name,
                              std::shared_ptr<Sai2Model::Sai2Model> robot,
-                             std::shared_ptr<chai3d::cShapeLine> display_line)
+                             chai3d::cShapeLine* display_line)
     : _robot_name(robot_name), _robot(robot), _display_line(display_line) {
+  _display_line->m_name = "line_ui_force_" + robot_name;
   _display_line->setShowEnabled(false);
   // TODO: set default line display properties
 
@@ -43,8 +44,6 @@ void UIForceWidget::setEnable(bool enable) {
 bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
                                          int viewy, int window_width,
                                          int window_height) {
-  // bool UIForceWidget::setInteractionParams(const bool fLinkSelected, const
-  // cCamera* camera)
 
   // if state is inactive, check if link selection is in progress
   if (_state == Inactive) {
@@ -55,11 +54,10 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
       _state = Active;
       _robot->positionInWorld(_initial_click_point, _link_name,
                               _link_local_pos);
-      // std::cout << "Active: link " << _link_name << std::endl;
     } else {
+      _state = Disabled;
       return false;
     }
-    // TODO: as an optimization we could perform this check only once per click
   }
   // if state is active,
   if (_state == Active) {
