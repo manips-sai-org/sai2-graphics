@@ -17,7 +17,7 @@ int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
+	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file);
     Eigen::VectorXd q_robot = graphics->getRobotJointPos(robot_name);
 
     // set up ui force interaction

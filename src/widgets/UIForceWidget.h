@@ -27,7 +27,7 @@ namespace Sai2Graphics
 	public:
 		// ctor
 		UIForceWidget(const std::string &robot_name, std::shared_ptr<Sai2Model::Sai2Model> robot,
-					  std::shared_ptr<chai3d::cShapeLine> display_line);
+					  chai3d::cShapeLine* display_line);
 
 		// set state
 		void setEnable(bool enable);
@@ -74,7 +74,7 @@ namespace Sai2Graphics
 								  Eigen::Vector3d &ret_pos);
 
 		// a line to be displayed when an interaction force is applied
-		std::shared_ptr<chai3d::cShapeLine> _display_line;
+		chai3d::cShapeLine* _display_line;
 
 		// name of robot
 		std::string _robot_name;
