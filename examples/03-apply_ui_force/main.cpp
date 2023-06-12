@@ -11,7 +11,6 @@ using namespace std;
 
 const string world_file = "resources/world.urdf";
 const string robot_name = "RBot";
-const string camera_name = "camera_fixed";
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -31,7 +30,7 @@ int main() {
 	{
 		// update graphics rendering and window contents
         graphics->updateRobotGraphics(robot_name, q_robot);
-        graphics->updateDisplayedWorld(camera_name);
+        graphics->updateDisplayedWorld();
         graphics->getUITorques(robot_name, ui_interaction_torques);
 
         if(counter % 50 == 0) {

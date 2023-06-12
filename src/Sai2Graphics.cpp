@@ -28,6 +28,9 @@ namespace
 	bool fRobotLinkSelect = false;
 	bool fRobotLinkSelectReset = true;
 	bool fShiftPressed = false;
+	bool fNextCamera = false;
+	bool fPreviousCamera = false;
+	bool fSwapCameraReset = true;
 
 	// callback to print glfw errors
 	void glfwError(int error, const char *description)
@@ -70,6 +73,18 @@ namespace
 				fShowCameraPoseReset = true;
 			}
 			break;
+		case GLFW_KEY_N:
+			fNextCamera = set;
+			if(!fNextCamera && !fSwapCameraReset) {
+				fSwapCameraReset = true;
+			}
+			break;
+		case GLFW_KEY_B:
+			fPreviousCamera = set;
+			if(!fPreviousCamera && !fSwapCameraReset) {
+				fSwapCameraReset = true;
+			}
+			break;
 		case GLFW_KEY_LEFT_SHIFT:
 			fShiftPressed = set;
 		default:
@@ -81,7 +96,6 @@ namespace
 	void mouseClick(GLFWwindow *window, int button, int action, int mods)
 	{
 		bool set = (action != GLFW_RELEASE);
-		// TODO: mouse interaction with robot
 		switch (button)
 		{
 		// left click pans and tilts
@@ -164,7 +178,8 @@ void Sai2Graphics::resetWorld(const std::string& path_to_world_file, const bool 
 
 void Sai2Graphics::initializeWorld(const std::string& path_to_world_file, const bool verbose) {
 	_world = new chai3d::cWorld();
-	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, _robot_filenames, verbose);
+	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, _robot_filenames, _camera_names, verbose);
+	_current_camera_index = 0;
 	for(auto robot_filename : _robot_filenames) {
 		// get robot base object in chai world
 		cRobotBase* base = NULL;
@@ -188,6 +203,7 @@ void Sai2Graphics::clearWorld() {
 	delete _world;
 	_robot_filenames.clear();
 	_robot_models.clear();
+	_camera_names.clear();
 }
 
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
@@ -223,7 +239,18 @@ void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& 
 	}
 }
 
-void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
+void Sai2Graphics::updateDisplayedWorld() {
+	// swap camera if needed
+	if(fNextCamera && fSwapCameraReset) {
+		fSwapCameraReset = false;
+		_current_camera_index = (_current_camera_index + 1) % _camera_names.size();
+	}
+	if(fPreviousCamera && fSwapCameraReset) {
+		fSwapCameraReset = false;
+		_current_camera_index = (_current_camera_index - 1) % _camera_names.size();
+	}
+	const std::string camera_name = _camera_names[_current_camera_index]; 
+
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
 	glfwSwapBuffers(_window);
@@ -233,52 +260,49 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 	glfwPollEvents();
 
 	// move scene camera as required
-	getCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
-	Vector3d cam_depth_axis = _camera_lookat_point - _camera_pos;
+	Eigen::Vector3d camera_pos, camera_lookat_point, camera_up_axis;
+	getCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
+	Vector3d cam_depth_axis = camera_lookat_point - camera_pos;
 	cam_depth_axis.normalize();
-	// Vector3d cam_up_axis;
-	// cam_up_axis << 0.0, 0.0, 1.0; // TODO: there might be a better way to do this
-	Vector3d cam_right_axis = cam_depth_axis.cross(_camera_up_axis);
+	Vector3d cam_right_axis = cam_depth_axis.cross(camera_up_axis);
 	cam_right_axis.normalize();
-	// Vector3d cam_lookat_axis = _camera_lookat;
-	// cam_lookat_axis.normalize();
 	if (fTransXp)
 	{
-			_camera_pos += 0.05 * cam_right_axis;
-			_camera_lookat_point += 0.05 * cam_right_axis;
+			camera_pos += 0.05 * cam_right_axis;
+			camera_lookat_point += 0.05 * cam_right_axis;
 	}
 	if (fTransXn)
 	{
-			_camera_pos -= 0.05 * cam_right_axis;
-			_camera_lookat_point -= 0.05 * cam_right_axis;
+			camera_pos -= 0.05 * cam_right_axis;
+			camera_lookat_point -= 0.05 * cam_right_axis;
 	}
 	if (fTransYp)
 	{
-			_camera_pos += 0.05 * _camera_up_axis;
-			_camera_lookat_point += 0.05 * _camera_up_axis;
+			camera_pos += 0.05 * camera_up_axis;
+			camera_lookat_point += 0.05 * camera_up_axis;
 	}
 	if (fTransYn)
 	{
-			_camera_pos -= 0.05 * _camera_up_axis;
-			_camera_lookat_point -= 0.05 * _camera_up_axis;
+			camera_pos -= 0.05 * camera_up_axis;
+			camera_lookat_point -= 0.05 * camera_up_axis;
 	}
 	if (fTransZp)
 	{
-			_camera_pos += 0.1 * cam_depth_axis;
-			_camera_lookat_point += 0.1 * cam_depth_axis;
+			camera_pos += 0.1 * cam_depth_axis;
+			camera_lookat_point += 0.1 * cam_depth_axis;
 	}
 	if (fTransZn)
 	{
-			_camera_pos -= 0.1 * cam_depth_axis;
-			_camera_lookat_point -= 0.1 * cam_depth_axis;
+			camera_pos -= 0.1 * cam_depth_axis;
+			camera_lookat_point -= 0.1 * cam_depth_axis;
 	}
 	if (fShowCameraPose && fShowCameraPoseReset)
 	{
 			fShowCameraPoseReset = false;
 			cout << endl;
-			cout << "camera position : " << _camera_pos.transpose() << endl;
-			cout << "camera lookat point : " << _camera_lookat_point.transpose() << endl;
-			cout << "camera up axis : " << _camera_up_axis.transpose() << endl;
+			cout << "camera position : " << camera_pos.transpose() << endl;
+			cout << "camera lookat point : " << camera_lookat_point.transpose() << endl;
+			cout << "camera up axis : " << camera_up_axis.transpose() << endl;
 			cout << endl;
 	}
 	if (fRotPanTilt)
@@ -292,13 +316,13 @@ void Sai2Graphics::updateDisplayedWorld(const std::string &camera_name) {
 		double radius = cam_depth_axis.norm();
 		Matrix3d m_tilt;
 		m_tilt = AngleAxisd(azimuth, -cam_right_axis);
-		_camera_pos = _camera_lookat_point + m_tilt * (_camera_pos - _camera_lookat_point);
+		camera_pos = camera_lookat_point + m_tilt * (camera_pos - camera_lookat_point);
 		Matrix3d m_pan;
-		m_pan = AngleAxisd(compass, -_camera_up_axis);
-		_camera_pos = _camera_lookat_point + m_pan * (_camera_pos - _camera_lookat_point);
-		_camera_up_axis = m_pan * _camera_up_axis;
+		m_pan = AngleAxisd(compass, -camera_up_axis);
+		camera_pos = camera_lookat_point + m_pan * (camera_pos - camera_lookat_point);
+		camera_up_axis = m_pan * camera_up_axis;
 	}
-	setCameraPose(camera_name, _camera_pos, _camera_up_axis, _camera_lookat_point);
+	setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
 	// allows the user to drag on a link and apply a force
@@ -481,64 +505,6 @@ void Sai2Graphics::setCameraPose(const std::string& camera_name,
 	cVector3d vert(vertical_axis[0], vertical_axis[1], vertical_axis[2]);
 	cVector3d look(lookat_point[0], lookat_point[1], lookat_point[2]);
 	camera->set(pos, look, vert);
-}
-
-bool Sai2Graphics::getRobotLinkInCamera(const std::string& camera_name,
-		                                   const std::string& robot_name,
-		                                   int view_x,
-		                                   int view_y,
-		                                   int window_width,
-										   int window_height,
-		                                   std::string& ret_link_name,
-		                                   Eigen::Vector3d& ret_pos) {
-	cCollisionRecorder selectionRecorder;
-
-	//use standard settings
-	cCollisionSettings defaultSettings;
-	defaultSettings.m_checkForNearestCollisionOnly = false;
-	defaultSettings.m_checkVisibleObjects = true;
-	defaultSettings.m_collisionRadius = 0;
-	defaultSettings.m_returnMinimalCollisionData = false;
-
-	//use collision detection on the present camera!
-	bool hit = getCamera(camera_name)->selectWorld(
-										view_x,
-										view_y,
-										window_width,
-										window_height,
-										selectionRecorder,
-										defaultSettings);
-	if(hit) {
-		cVector3d pos = selectionRecorder.m_nearestCollision.m_localPos;
-		auto object = selectionRecorder.m_nearestCollision.m_object;
-		if(object->getParent() == NULL) {
-			return false;
-		}
-		auto object_parent = object->getParent();
-		bool f_found_parent_link = false;
-		cTransform transform = object->getLocalTransform();
-		cRobotLink* link;
-		while (object_parent != NULL) {
-			if (robot_name == object_parent->m_name) {
-				return true;
-			}
-			if (!f_found_parent_link) {
-				// try casting to cRobotLink
-				link = dynamic_cast<cRobotLink*> (object_parent);
-				if (link != NULL) {
-					f_found_parent_link = true;
-					ret_link_name = link->m_name;
-					// position is with respect to the graphic object. need to go up to the link frame
-					pos = transform * pos;
-					ret_pos << pos.x(), pos.y(), pos.z();
-				} else {
-					transform = object_parent->getLocalTransform()*transform;
-				}
-			}
-			object_parent = object_parent->getParent();
-		}
-	}
-	return false;
 }
 
 // get camera object
