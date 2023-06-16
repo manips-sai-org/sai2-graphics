@@ -21,7 +21,7 @@ int main() {
     Sai2Model::ForceSensorData force_data = Sai2Model::ForceSensorData();
     force_data._robot_name = "PBot";
     force_data._link_name = "cube_link";
-    graphics->addForceSensorDisplay(force_data._robot_name, force_data._link_name);
+    graphics->addForceSensorDisplay(force_data);
 
     unsigned long long counter = 0;
 

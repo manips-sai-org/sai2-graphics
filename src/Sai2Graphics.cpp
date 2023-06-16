@@ -216,16 +216,17 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 }
 
 void Sai2Graphics::addForceSensorDisplay(
-	const std::string& robot_name, const std::string& link_name,
-	const Eigen::Affine3d transform_in_link) {
-	if (!existsInGraphicsWorld(robot_name, link_name)) {
+	const Sai2Model::ForceSensorData& sensor_data) {
+	if (!existsInGraphicsWorld(sensor_data._robot_name,
+							   sensor_data._link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
 					 "unexisting robot or link in "
 					 "Sai2Simulation::addForceSensorDisplay\n"
 				  << std::endl;
 		return;
 	}
-	if (findForceSensorDisplay(robot_name, link_name) != -1) {
+	if (findForceSensorDisplay(sensor_data._robot_name,
+							   sensor_data._link_name) != -1) {
 		std::cout << "\n\nWARNING: only one force sensor is supported per "
 					 "link in Sai2Graphics::addForceSensorDisplay. Not "
 					 "adding the second one\n"
@@ -233,7 +234,8 @@ void Sai2Graphics::addForceSensorDisplay(
 		return;
 	}
 	_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
-		robot_name, link_name, transform_in_link, _robot_models[robot_name],
+		sensor_data._robot_name, sensor_data._link_name,
+		sensor_data._transform_in_link, _robot_models[sensor_data._robot_name],
 		_world));
 }
 

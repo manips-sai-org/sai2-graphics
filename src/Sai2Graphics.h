@@ -142,8 +142,7 @@ public:
 	 }
 
      void addForceSensorDisplay(
-         const std::string& robot_name, const std::string& link_name,
-         const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity());
+         const Sai2Model::ForceSensorData& sensor_data);
 
      void updateDisplayedForceSensor(const Sai2Model::ForceSensorData& force_data);    
 
