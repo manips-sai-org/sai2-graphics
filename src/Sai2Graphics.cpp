@@ -204,6 +204,7 @@ void Sai2Graphics::clearWorld() {
 	_robot_filenames.clear();
 	_robot_models.clear();
 	_camera_names.clear();
+	_force_sensor_displays.clear();
 }
 
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
@@ -214,9 +215,77 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	glfwSetMouseButtonCallback(_window, mouseClick);
 }
 
-void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
+void Sai2Graphics::addForceSensorDisplay(
+	const Sai2Model::ForceSensorData& sensor_data) {
+	if (!existsInGraphicsWorld(sensor_data._robot_name,
+							   sensor_data._link_name)) {
+		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
+					 "unexisting robot or link in "
+					 "Sai2Simulation::addForceSensorDisplay\n"
+				  << std::endl;
+		return;
+	}
+	if (findForceSensorDisplay(sensor_data._robot_name,
+							   sensor_data._link_name) != -1) {
+		std::cout << "\n\nWARNING: only one force sensor is supported per "
+					 "link in Sai2Graphics::addForceSensorDisplay. Not "
+					 "adding the second one\n"
+				  << std::endl;
+		return;
+	}
+	_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
+		sensor_data._robot_name, sensor_data._link_name,
+		sensor_data._transform_in_link, _robot_models[sensor_data._robot_name],
+		_world));
+}
+
+void Sai2Graphics::updateDisplayedForceSensor(
+	const Sai2Model::ForceSensorData& force_data) {
+	int sensor_index =
+		findForceSensorDisplay(force_data._robot_name, force_data._link_name);
+	if (sensor_index == -1) {
+		throw std::invalid_argument(
+			"no force sensor on robot " + force_data._robot_name + " on link " +
+			force_data._link_name +
+			". Impossible to update the displayed force in graphics world");
+		return;
+	}
+	if (!_force_sensor_displays.at(sensor_index)
+			 ->T_link_sensor()
+			 .isApprox(force_data._transform_in_link)) {
+		throw std::invalid_argument(
+			"transformation matrix between link and sensor inconsistent "
+			"between the input force_data and the sensor_display in "
+			"Sai2Graphics::updateDisplayedForceSensor");
+			return;
+	}
+	_force_sensor_displays.at(sensor_index)
+		->update(force_data._force_world_frame, force_data._moment_world_frame);
+}
+
+bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name, const std::string& link_name) const {
 	auto it = _robot_models.find(robot_name);
 	if(it == _robot_models.end()) {
+		return false;
+	}
+	if(link_name != "") {
+		return _robot_models.at(robot_name)->isLinkInRobot(link_name);
+	}
+	return true;
+}
+
+int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name, const std::string& link_name) const {
+	for(int i=0 ; i<_force_sensor_displays.size() ; ++i) {
+		if (_force_sensor_displays.at(i)->robot_name() == robot_name &&
+			_force_sensor_displays.at(i)->link_name() == link_name) {
+				return i;
+		}
+	}
+	return -1;
+}
+
+void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
+	if(!existsInGraphicsWorld(robot_name)) {
 		throw std::invalid_argument("robot not found in Sai2Graphics::addUIForceInteraction");
 	}
 	for(auto widget : _ui_force_widgets) {
