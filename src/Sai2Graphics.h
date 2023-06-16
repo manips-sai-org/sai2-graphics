@@ -211,9 +211,9 @@ private:
 
      void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame, const double frame_pointer_length);
 
-     bool existsInGraphicsWorld(const std::string& robot_name, const std::string link_name = "") const;
+     bool existsInGraphicsWorld(const std::string& robot_name, const std::string& link_name = "") const;
 
-     bool existsInForceSensorDisplays(const std::string& robot_name, const std::string link_name) const;
+     int findForceSensorDisplay(const std::string& robot_name, const std::string& link_name) const;
 
 	/**
      * @brief Internal cWorld object.
@@ -244,7 +244,7 @@ private:
       * @brief force sensor displays
       * 
       */
-     std::map<std::string, std::map<std::string, std::shared_ptr<ForceSensorDisplay>>> _force_sensor_displays;
+     std::vector<std::shared_ptr<ForceSensorDisplay>> _force_sensor_displays;
 
 
      /**

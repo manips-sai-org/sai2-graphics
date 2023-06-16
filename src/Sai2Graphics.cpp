@@ -204,9 +204,6 @@ void Sai2Graphics::clearWorld() {
 	_robot_filenames.clear();
 	_robot_models.clear();
 	_camera_names.clear();
-	for(auto& pair : _force_sensor_displays) {
-		pair.second.clear();
-	}
 	_force_sensor_displays.clear();
 }
 
@@ -228,45 +225,43 @@ void Sai2Graphics::addForceSensorDisplay(
 				  << std::endl;
 		return;
 	}
-
-	auto it_robot_name = _force_sensor_displays.find(robot_name);
-	if (it_robot_name == _force_sensor_displays.end()) {
-		std::map<std::string, std::shared_ptr<ForceSensorDisplay>> sensors;
-		sensors[link_name] = std::make_shared<ForceSensorDisplay>(
-			robot_name, link_name, transform_in_link,
-			_robot_models[robot_name], _world);
-		_force_sensor_displays[robot_name] = sensors;
-	} else {
-		auto it_link_name = it_robot_name->second.find(link_name);
-		if (it_link_name != it_robot_name->second.end()) {
-			std::cout << "\n\nWARNING: only one force sensor is supported per "
-						 "link in Sai2Graphics::addForceSensorDisplay. Not "
-						 "adding the second one\n"
-					  << std::endl;
-			return;
-		}
-		it_robot_name->second[link_name] =
-			std::make_shared<ForceSensorDisplay>(robot_name, link_name,
-													transform_in_link,
-													_robot_models[robot_name], _world);
+	if (findForceSensorDisplay(robot_name, link_name) != -1) {
+		std::cout << "\n\nWARNING: only one force sensor is supported per "
+					 "link in Sai2Graphics::addForceSensorDisplay. Not "
+					 "adding the second one\n"
+				  << std::endl;
+		return;
 	}
+	_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
+		robot_name, link_name, transform_in_link, _robot_models[robot_name],
+		_world));
 }
 
 void Sai2Graphics::updateDisplayedForceSensor(
 	const Sai2Model::ForceSensorData& force_data) {
-	if (!existsInForceSensorDisplays(force_data._robot_name,
-									 force_data._link_name)) {
+	int sensor_index =
+		findForceSensorDisplay(force_data._robot_name, force_data._link_name);
+	if (sensor_index == -1) {
 		throw std::invalid_argument(
 			"no force sensor on robot " + force_data._robot_name + " on link " +
 			force_data._link_name +
 			". Impossible to update the displayed force in graphics world");
 		return;
 	}
-	_force_sensor_displays[force_data._robot_name][force_data._link_name]
+	if (!_force_sensor_displays.at(sensor_index)
+			 ->T_link_sensor()
+			 .isApprox(force_data._transform_in_link)) {
+		throw std::invalid_argument(
+			"transformation matrix between link and sensor inconsistent "
+			"between the input force_data and the sensor_display in "
+			"Sai2Graphics::updateDisplayedForceSensor");
+			return;
+	}
+	_force_sensor_displays.at(sensor_index)
 		->update(force_data._force_world_frame, force_data._moment_world_frame);
 }
 
-bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name, const std::string link_name) const {
+bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name, const std::string& link_name) const {
 	auto it = _robot_models.find(robot_name);
 	if(it == _robot_models.end()) {
 		return false;
@@ -277,22 +272,18 @@ bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name, const st
 	return true;
 }
 
-bool Sai2Graphics::existsInForceSensorDisplays(const std::string& robot_name, const std::string link_name) const {
-	auto it_robot_name = _force_sensor_displays.find(robot_name);
-	if (it_robot_name == _force_sensor_displays.end()) {
-		return false;
+int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name, const std::string& link_name) const {
+	for(int i=0 ; i<_force_sensor_displays.size() ; ++i) {
+		if (_force_sensor_displays.at(i)->robot_name() == robot_name &&
+			_force_sensor_displays.at(i)->link_name() == link_name) {
+				return i;
+		}
 	}
-	auto it_link_name = it_robot_name->second.find(link_name);
-	if (it_link_name == it_robot_name->second.end()) {
-		return false;
-	}
-	return true;
+	return -1;
 }
 
-
 void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
-	auto it = _robot_models.find(robot_name);
-	if(it == _robot_models.end()) {
+	if(!existsInGraphicsWorld(robot_name)) {
 		throw std::invalid_argument("robot not found in Sai2Graphics::addUIForceInteraction");
 	}
 	for(auto widget : _ui_force_widgets) {
