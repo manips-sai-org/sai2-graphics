@@ -11,6 +11,7 @@
 #include <chai3d.h>
 #include "Sai2Model.h"
 #include "widgets/UIForceWidget.h"
+#include "widgets/ForceSensorDisplay.h"
 #include "chai_extension/CRobotLink.h"
 
 #include <GLFW/glfw3.h> //must be loaded after loading opengl/glew
@@ -140,6 +141,12 @@ public:
 	   return _camera_names[_current_camera_index];
 	 }
 
+     void addForceSensorDisplay(
+         const std::string& robot_name, const std::string& link_name,
+         const Eigen::Affine3d transform_in_link = Eigen::Affine3d::Identity());
+
+     void updateDisplayedForceSensor(const Sai2Model::ForceSensorData& force_data);    
+
 private:
      
      void initializeWorld(const std::string& path_to_world_file, const bool verbose);
@@ -204,6 +211,9 @@ private:
 
      void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame, const double frame_pointer_length);
 
+     bool existsInGraphicsWorld(const std::string& robot_name, const std::string link_name = "") const;
+
+     bool existsInForceSensorDisplays(const std::string& robot_name, const std::string link_name) const;
 
 	/**
      * @brief Internal cWorld object.
@@ -229,6 +239,13 @@ private:
       */
      std::map<std::string, std::string> _robot_filenames;
      std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+
+     /**
+      * @brief force sensor displays
+      * 
+      */
+     std::map<std::string, std::map<std::string, std::shared_ptr<ForceSensorDisplay>>> _force_sensor_displays;
+
 
      /**
       * @brief vector of camera names in the world and current camera index
