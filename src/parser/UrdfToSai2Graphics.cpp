@@ -182,6 +182,7 @@ static void loadVisualtoGenericObject(cGenericObject* object, const my_shared_pt
 void UrdfToSai2GraphicsWorld(const std::string& filename,
 							chai3d::cWorld* world,
 							std::map<std::string, std::string>& robot_filenames,
+							std::vector<std::string>& camera_names,
 							bool verbose) {
 	// load world urdf file
 	ifstream model_file (filename);
@@ -246,6 +247,12 @@ void UrdfToSai2GraphicsWorld(const std::string& filename,
 	// parse cameras
 	for (const auto camera_pair: urdf_world->graphics_.cameras) {
 		const auto camera_ptr = camera_pair.second;
+		auto it = std::find(camera_names.begin(), camera_names.end(), camera_ptr->name);
+		if(it != camera_names.end()) {
+			throw std::runtime_error("Different cameras cannot have the same name in the world");
+		}
+		camera_names.push_back(camera_ptr->name);
+
 		// initialize a chai camera
 		cCamera* camera = new cCamera(world);
 		// TODO: support link mounted camera

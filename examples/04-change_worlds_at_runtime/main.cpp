@@ -13,7 +13,6 @@ const string world_file_1 = "resources/world.urdf";
 const string world_file_2 = "resources/world2.urdf";
 const string robot_name_1 = "RBot";
 const string robot_name_2 = "RBot2";
-const string camera_name = "camera_fixed";
 
 int main() {
     // load graphics scene
@@ -37,7 +36,7 @@ int main() {
             q_robot2(0) -= 0.01;
             graphics->updateRobotGraphics(robot_name_2, q_robot2);
         }
-        graphics->updateDisplayedWorld(camera_name);
+        graphics->updateDisplayedWorld();
 
         // swap to second world
         if(counter % 700 == 350) {
