@@ -25,6 +25,13 @@ int main() {
 
 	unsigned long long counter = 0;
 
+	cout << endl
+		 << "Sensed force data is rendered in the graphics world. After some "
+			"time, a vertical force is rendered, then a tengential moment is "
+			"added and finally a tengential force is added"
+		 << endl;
+	cout << endl;
+
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		// update graphics robot and object poses in graphics and render

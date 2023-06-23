@@ -1,7 +1,3 @@
-// This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Dynamics3D virtual world. A graphics model of
-// it is also shown using Chai3D.
-
 #include <iostream>
 #include <string>
 
@@ -24,6 +20,9 @@ int main() {
 
 	unsigned long long counter = 0;
 	int current_loaded_world = 0;
+
+	cout << endl
+		 << "Periodically swaps between two worlds and renders them" << endl;
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {

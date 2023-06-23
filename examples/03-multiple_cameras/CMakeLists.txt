@@ -1,4 +1,4 @@
-set(EXAMPLE_NAME 05-multiple_cameras)
+set(EXAMPLE_NAME 03-multiple_cameras)
 
 # create an executable
 ADD_EXECUTABLE (${EXAMPLE_NAME} main.cpp)

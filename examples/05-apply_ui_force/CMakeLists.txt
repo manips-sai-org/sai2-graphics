@@ -1,4 +1,4 @@
-set(EXAMPLE_NAME 03-apply_ui_force)
+set(EXAMPLE_NAME 05-apply_ui_force)
 
 # create an executable
 ADD_EXECUTABLE (${EXAMPLE_NAME} main.cpp)

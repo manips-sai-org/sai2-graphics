@@ -1,6 +1,5 @@
-// This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Dynamics3D virtual world. A graphics model of
-// it is also shown using Chai3D.
+// This example application loads a URDF world file and displays a simple robot
+// that does not move
 
 #include <iostream>
 #include <string>
@@ -17,6 +16,22 @@ int main() {
 	// load graphics scene
 	auto graphics =
 		new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
+
+	cout << endl
+		 << "This example parses a world file containing a simple robot, it "
+			"creates a display to render the world. It is possible to move the "
+			"camera in several ways."
+		 << endl;
+	cout << "Left mouse button: rotate camera" << endl;
+	cout << "Left mouse button + ctrl: translate camera" << endl;
+	cout << "Left mouse button + alt/shift: zoom camera" << endl;
+	cout << "Middle mouse button: translate camera" << endl;
+	cout << "Mouse wheel scroll: zoom camera" << endl;
+	cout << "up, down, left, right keys: translate camera" << endl;
+	cout << "A, Z keys: zoom camera" << endl;
+	cout << "S key: print camera position in world" << endl;
+	cout << "ESC key or close the window: exit the program" << endl;
+	cout << endl << endl;
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {
