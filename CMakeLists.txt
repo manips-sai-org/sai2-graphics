@@ -46,16 +46,20 @@ find_library(GLFW_LIBRARY glfw)
 
 # include Widgets
 SET(WIDGETS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/widgets)
-SET(WIDGETS_SOURCE ${PROJECT_SOURCE_DIR}/src/widgets/UIForceWidget.cpp)
+SET(WIDGETS_SOURCE 
+	${PROJECT_SOURCE_DIR}/src/widgets/UIForceWidget.cpp
+	${PROJECT_SOURCE_DIR}/src/widgets/ForceSensorDisplay.cpp
+)
 
 # include Graphics
 SET(SAI2-GRAPHICS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
-SET(GRAPHICS_SOURCE ${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
+SET(GRAPHICS_SOURCE 
+	${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
 	${PROJECT_SOURCE_DIR}/src/chai_extension/Capsule.cpp
 	${PROJECT_SOURCE_DIR}/src/chai_extension/CapsuleMesh.cpp
 	${PROJECT_SOURCE_DIR}/src/chai_extension/Pyramid.cpp
 	${PROJECT_SOURCE_DIR}/src/chai_extension/PyramidMesh.cpp
-	)
+)
 
 # Add the include directory to the include paths
 INCLUDE_DIRECTORIES (

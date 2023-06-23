@@ -10,7 +10,6 @@
 using namespace std;
 
 const string world_file = "resources/world.urdf";
-const string camera_name = "camera_fixed";
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -22,7 +21,7 @@ int main() {
 	while (graphics->isWindowOpen()) {
 		// update graphics the rendering and the window display.
 		// this automatically waits for the correct amount of time
-		graphics->updateDisplayedWorld(camera_name);
+		graphics->updateDisplayedWorld();
 	}
 
 	return 0;

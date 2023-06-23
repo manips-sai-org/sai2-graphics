@@ -1,4 +1,4 @@
-set(EXAMPLE_NAME 02-update_rendering)
+set(EXAMPLE_NAME 05-multiple_cameras)
 
 # create an executable
 ADD_EXECUTABLE (${EXAMPLE_NAME} main.cpp)
@@ -11,4 +11,4 @@ TARGET_LINK_LIBRARIES (${EXAMPLE_NAME}
 # export resources such as model files.
 SET(RESOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/resources)
 FILE(MAKE_DIRECTORY ${RESOURCE_DIR})
-FILE(COPY world.urdf rbot.urdf DESTINATION ${RESOURCE_DIR})
+FILE(COPY world.urdf sphbot.urdf DESTINATION ${RESOURCE_DIR})

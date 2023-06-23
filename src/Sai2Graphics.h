@@ -11,6 +11,7 @@
 #include <chai3d.h>
 #include "Sai2Model.h"
 #include "widgets/UIForceWidget.h"
+#include "widgets/ForceSensorDisplay.h"
 #include "chai_extension/CRobotLink.h"
 
 #include <GLFW/glfw3.h> //must be loaded after loading opengl/glew
@@ -57,7 +58,7 @@ public:
       * 
       * @param camera_name the name of the camera to display
       */
-     void updateDisplayedWorld(const std::string &camera_name);
+     void updateDisplayedWorld();
 
      /**
       * @brief remove all interactions widgets
@@ -136,6 +137,15 @@ public:
        _world->setBackgroundColor(red, green, blue);
      }
 
+	 std::string getCurrentCameraName() const {
+	   return _camera_names[_current_camera_index];
+	 }
+
+     void addForceSensorDisplay(
+         const Sai2Model::ForceSensorData& sensor_data);
+
+     void updateDisplayedForceSensor(const Sai2Model::ForceSensorData& force_data);    
+
 private:
      
      void initializeWorld(const std::string& path_to_world_file, const bool verbose);
@@ -184,28 +194,6 @@ private:
                          const Eigen::Vector3d& lookat);
 
      
-     // TODO: remove when deprecation period is over
-     /**
-     * @brief Get info about link of the specified robot at the given cursor position.
-     * @return True if a link is present, False if not
-     * @param camera_name Camera name.
-     * @param robot_name Name of robot to look for.
-     * @param view_x x-position of cursor in viewport (OpenGL style screen co-ordinates).
-     * @param view_y y-position of cursor in viewport (OpenGL style screen co-ordinates).
-     * @param window_width Width of viewport in screen co-ordinates.
-     * @param window_height Height of viewport in screen co-ordinates.
-     * @param ret_link_name Name of the link. Garbage if no link present at cursor location.
-     * @param ret_pos Position of cursor in link frame. Garbage if no link present at cursor location.
-     */
-     bool getRobotLinkInCamera(const std::string& camera_name,
-                                   const std::string& robot_name,
-                                   int view_x,
-                                   int view_y,
-                                   int window_width,
-                                   int window_height,
-                                   std::string& ret_link_name,
-                                   Eigen::Vector3d& ret_pos);
-
      /* CHAI specific interface */
      /**
      * @brief Get pointer to Chai camera object.
@@ -222,6 +210,9 @@ private:
 
      void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame, const double frame_pointer_length);
 
+     bool existsInGraphicsWorld(const std::string& robot_name, const std::string& link_name = "") const;
+
+     int findForceSensorDisplay(const std::string& robot_name, const std::string& link_name) const;
 
 	/**
      * @brief Internal cWorld object.
@@ -249,12 +240,18 @@ private:
      std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
 
      /**
-      * @brief position of the camera and lookat point
+      * @brief force sensor displays
       * 
       */
-	Vector3d _camera_pos;
-     Vector3d _camera_lookat_point;
-     Vector3d _camera_up_axis;
+     std::vector<std::shared_ptr<ForceSensorDisplay>> _force_sensor_displays;
+
+
+     /**
+      * @brief vector of camera names in the world and current camera index
+      * 
+      */
+	std::vector<std::string> _camera_names;
+     int _current_camera_index;
 
      /**
       * @brief used to store the last cursor position
