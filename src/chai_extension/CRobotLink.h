@@ -15,15 +15,15 @@
 
 namespace chai3d {
 
-class cRobotLink: public cGenericObject {
+class cRobotLink : public cGenericObject {
 public:
 	/**
-     * @brief Creates a cRobotLink object. This is a simply a type 
-     * specialization for cGenericObject to be used for robot links.
-     */
-	cRobotLink() {;}
+	 * @brief Creates a cRobotLink object. This is a simply a type
+	 * specialization for cGenericObject to be used for robot links.
+	 */
+	cRobotLink() {}
 };
 
-}
+}  // namespace chai3d
 
-#endif //CRobotLinkH
+#endif	// CRobotLinkH

@@ -11,7 +11,7 @@ namespace Sai2Graphics {
 // For example, if the sensor is pushing down on the floor, the displayed line
 // for the force will go up.
 class ForceSensorDisplay {
-   public:
+public:
 	ForceSensorDisplay(const std::string& robot_name,
 					   const std::string& link_name,
 					   const Eigen::Affine3d T_link_sensor,
@@ -27,7 +27,7 @@ class ForceSensorDisplay {
 	std::string link_name() const { return _link_name; }
 	Eigen::Affine3d T_link_sensor() const { return _T_link_sensor; }
 
-   private:
+private:
 	// a line to be displayed when a contact force is active
 	chai3d::cShapeLine* _display_line_force;
 
