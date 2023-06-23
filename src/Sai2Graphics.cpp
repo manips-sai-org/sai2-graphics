@@ -7,6 +7,8 @@
 
 #include "Sai2Graphics.h"
 #include "parser/UrdfToSai2Graphics.h"
+#include <unordered_map>
+#include <deque>
 #include <iostream>
 
 using namespace std;
@@ -14,81 +16,91 @@ using namespace chai3d;
 
 namespace
 {
+// custom aliases that capture the key function
+#define ZOOM_IN_KEY 			GLFW_KEY_A
+#define ZOOM_OUT_KEY 			GLFW_KEY_Z
+#define CAMERA_RIGHT_KEY 		GLFW_KEY_RIGHT
+#define CAMERA_LEFT_KEY			GLFW_KEY_LEFT
+#define CAMERA_UP_KEY 			GLFW_KEY_UP
+#define CAMERA_DOWN_KEY 		GLFW_KEY_DOWN
+#define NEXT_CAMERA_KEY 		GLFW_KEY_N
+#define PREV_CAMERA_KEY 		GLFW_KEY_B
+#define SHOW_CAMERA_POS_KEY 	GLFW_KEY_S
 
-	// flags for scene camera movement
-	bool fTransXp = false;
-	bool fTransXn = false;
-	bool fTransYp = false;
-	bool fTransYn = false;
-	bool fTransZp = false;
-	bool fTransZn = false;
-	bool fRotPanTilt = false;
-	bool fShowCameraPose = false;
-	bool fShowCameraPoseReset = true;
-	bool fRobotLinkSelect = false;
-	bool fRobotLinkSelectReset = true;
-	bool fShiftPressed = false;
-	bool fNextCamera = false;
-	bool fPreviousCamera = false;
-	bool fSwapCameraReset = true;
+// map to store key presses. The first bool is true if the key is pressed and
+// false otherwise, the second bool is used as a flag to know if the initial key
+// press has been consumed when something needs to happen only once when the key
+// is pressed and not continuously
+std::unordered_map<int, std::pair<bool, bool>> key_presses_map = {
+	{ZOOM_IN_KEY, std::make_pair(false, true)},
+	{ZOOM_OUT_KEY, std::make_pair(false, true)},
+	{CAMERA_RIGHT_KEY, std::make_pair(false, true)},
+	{CAMERA_LEFT_KEY, std::make_pair(false, true)},
+	{CAMERA_UP_KEY, std::make_pair(false, true)},
+	{CAMERA_DOWN_KEY, std::make_pair(false, true)},
+	{NEXT_CAMERA_KEY, std::make_pair(false, true)},
+	{PREV_CAMERA_KEY, std::make_pair(false, true)},
+	{SHOW_CAMERA_POS_KEY, std::make_pair(false, true)},
+	{GLFW_KEY_LEFT_SHIFT, std::make_pair(false, true)},
+	{GLFW_KEY_LEFT_ALT, std::make_pair(false, true)},
+	{GLFW_KEY_LEFT_CONTROL, std::make_pair(false, true)},
+};
 
-	// callback to print glfw errors
-	void glfwError(int error, const char *description)
-	{
-		cerr << "GLFW Error: " << description << endl;
-		exit(1);
+std::unordered_map<int, std::pair<bool, bool>> mouse_button_presses_map = {
+	{GLFW_MOUSE_BUTTON_LEFT, std::make_pair(false, true)},
+	{GLFW_MOUSE_BUTTON_RIGHT, std::make_pair(false, true)},
+	{GLFW_MOUSE_BUTTON_MIDDLE, std::make_pair(false, true)},
+};
+
+std::deque<double> mouse_scroll_buffer;
+
+bool is_pressed(int key) {
+	if (key_presses_map.count(key) > 0) {
+		return key_presses_map.at(key).first;
+	}
+	if (mouse_button_presses_map.count(key) > 0) {
+		return mouse_button_presses_map.at(key).first;
+	}
+	return false;
+}
+
+bool consume_first_press(int key) {
+	if (key_presses_map.count(key) > 0) {
+		if (key_presses_map.at(key).first && key_presses_map.at(key).second) {
+			key_presses_map.at(key).second = false;
+			return true;
+		}
+	}
+	if (mouse_button_presses_map.count(key) > 0) {
+		if (mouse_button_presses_map.at(key).first &&
+			mouse_button_presses_map.at(key).second) {
+			mouse_button_presses_map.at(key).second = false;
+			return true;
+		}
+	}
+	return false;
+}
+
+// callback to print glfw errors
+void glfwError(int error, const char* description) {
+	cerr << "GLFW Error: " << description << endl;
+	exit(1);
 	}
 
 	// callback when a key is pressed
 	void keySelect(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
 		bool set = (action != GLFW_RELEASE);
-		switch (key)
-		{
-		case GLFW_KEY_ESCAPE:
-			// exit application
+		if(key == GLFW_KEY_ESCAPE) {
+			// handle esc separately to exit application
 			glfwSetWindowShouldClose(window, GL_TRUE);
-			break;
-		case GLFW_KEY_RIGHT:
-			fTransXp = set;
-			break;
-		case GLFW_KEY_LEFT:
-			fTransXn = set;
-			break;
-		case GLFW_KEY_UP:
-			fTransYp = set;
-			break;
-		case GLFW_KEY_DOWN:
-			fTransYn = set;
-			break;
-		case GLFW_KEY_A:
-			fTransZp = set;
-			break;
-		case GLFW_KEY_Z:
-			fTransZn = set;
-			break;
-		case GLFW_KEY_S:
-			fShowCameraPose = set;
-			if(!fShowCameraPose) {
-				fShowCameraPoseReset = true;
+		} else {
+			if(key_presses_map.count(key) > 0) {
+				key_presses_map.at(key).first = set;
+				if(!set) {
+					key_presses_map.at(key).second = true;
+				}
 			}
-			break;
-		case GLFW_KEY_N:
-			fNextCamera = set;
-			if(!fNextCamera && !fSwapCameraReset) {
-				fSwapCameraReset = true;
-			}
-			break;
-		case GLFW_KEY_B:
-			fPreviousCamera = set;
-			if(!fPreviousCamera && !fSwapCameraReset) {
-				fSwapCameraReset = true;
-			}
-			break;
-		case GLFW_KEY_LEFT_SHIFT:
-			fShiftPressed = set;
-		default:
-			break;
 		}
 	}
 
@@ -96,24 +108,19 @@ namespace
 	void mouseClick(GLFWwindow *window, int button, int action, int mods)
 	{
 		bool set = (action != GLFW_RELEASE);
-		switch (button)
-		{
-		// left click pans and tilts
-		case GLFW_MOUSE_BUTTON_LEFT:
-			fRotPanTilt = set;
-			break;
-		// right click to interact with robot by applying forces
-		case GLFW_MOUSE_BUTTON_RIGHT:
-			fRobotLinkSelect = set;
-			if(!fRobotLinkSelect) {
-				fRobotLinkSelectReset = true;
+		if(mouse_button_presses_map.count(button) > 0) {
+			mouse_button_presses_map.at(button).first = set;
+			if(!set) {
+				mouse_button_presses_map.at(button).second = true;
 			}
-			break;
-		// if middle click: don't handle. doesn't work well on laptops
-		case GLFW_MOUSE_BUTTON_MIDDLE:
-			break;
-		default:
-			break;
+		}
+	}
+
+	// callback when the mouse wheel is scrolled
+	void mouseScroll(GLFWwindow* window, double xoffset, double yoffset)
+	{
+		if(yoffset != 0) {
+			mouse_scroll_buffer.push_back(yoffset);
 		}
 	}
 
@@ -148,7 +155,6 @@ namespace
 
 		return window;
 	}
-
 }
 
 namespace Sai2Graphics 
@@ -213,6 +219,7 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	// set callbacks
 	glfwSetKeyCallback(_window, keySelect);
 	glfwSetMouseButtonCallback(_window, mouseClick);
+	glfwSetScrollCallback(_window, mouseScroll);
 }
 
 void Sai2Graphics::addForceSensorDisplay(
@@ -302,7 +309,7 @@ void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& 
 	ret_torques.setZero();
 	for(auto widget : _ui_force_widgets) {
 		if(robot_name == widget->getRobotName()) {
-			ret_torques = widget->getUIJointTorques(!fShiftPressed);
+			ret_torques = widget->getUIJointTorques(!is_pressed(GLFW_KEY_LEFT_SHIFT));
 			return;
 		}
 	}
@@ -310,12 +317,10 @@ void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& 
 
 void Sai2Graphics::updateDisplayedWorld() {
 	// swap camera if needed
-	if(fNextCamera && fSwapCameraReset) {
-		fSwapCameraReset = false;
+	if(consume_first_press(NEXT_CAMERA_KEY)) {
 		_current_camera_index = (_current_camera_index + 1) % _camera_names.size();
 	}
-	if(fPreviousCamera && fSwapCameraReset) {
-		fSwapCameraReset = false;
+	if(consume_first_press(PREV_CAMERA_KEY)) {
 		_current_camera_index = (_current_camera_index - 1) % _camera_names.size();
 	}
 	const std::string camera_name = _camera_names[_current_camera_index]; 
@@ -328,79 +333,103 @@ void Sai2Graphics::updateDisplayedWorld() {
 	// poll for events
 	glfwPollEvents();
 
-	// move scene camera as required
+	// handle key presses
 	Eigen::Vector3d camera_pos, camera_lookat_point, camera_up_axis;
 	getCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
 	Vector3d cam_depth_axis = camera_lookat_point - camera_pos;
 	cam_depth_axis.normalize();
 	Vector3d cam_right_axis = cam_depth_axis.cross(camera_up_axis);
 	cam_right_axis.normalize();
-	if (fTransXp)
-	{
-			camera_pos += 0.05 * cam_right_axis;
-			camera_lookat_point += 0.05 * cam_right_axis;
+	if (is_pressed(CAMERA_RIGHT_KEY)) {
+		camera_pos += 0.05 * cam_right_axis;
+		camera_lookat_point += 0.05 * cam_right_axis;
 	}
-	if (fTransXn)
-	{
-			camera_pos -= 0.05 * cam_right_axis;
-			camera_lookat_point -= 0.05 * cam_right_axis;
+	if (is_pressed(CAMERA_LEFT_KEY)) {
+		camera_pos -= 0.05 * cam_right_axis;
+		camera_lookat_point -= 0.05 * cam_right_axis;
 	}
-	if (fTransYp)
-	{
-			camera_pos += 0.05 * camera_up_axis;
-			camera_lookat_point += 0.05 * camera_up_axis;
+	if (is_pressed(CAMERA_UP_KEY)) {
+		camera_pos += 0.05 * camera_up_axis;
+		camera_lookat_point += 0.05 * camera_up_axis;
 	}
-	if (fTransYn)
-	{
-			camera_pos -= 0.05 * camera_up_axis;
-			camera_lookat_point -= 0.05 * camera_up_axis;
+	if (is_pressed(CAMERA_DOWN_KEY)) {
+		camera_pos -= 0.05 * camera_up_axis;
+		camera_lookat_point -= 0.05 * camera_up_axis;
 	}
-	if (fTransZp)
-	{
-			camera_pos += 0.1 * cam_depth_axis;
-			camera_lookat_point += 0.1 * cam_depth_axis;
+	if (is_pressed(ZOOM_IN_KEY)) {
+		camera_pos += 0.1 * cam_depth_axis;
+		camera_lookat_point += 0.1 * cam_depth_axis;
 	}
-	if (fTransZn)
-	{
-			camera_pos -= 0.1 * cam_depth_axis;
-			camera_lookat_point -= 0.1 * cam_depth_axis;
+	if (is_pressed(ZOOM_OUT_KEY)) {
+		camera_pos -= 0.1 * cam_depth_axis;
+		camera_lookat_point -= 0.1 * cam_depth_axis;
 	}
-	if (fShowCameraPose && fShowCameraPoseReset)
-	{
-			fShowCameraPoseReset = false;
-			cout << endl;
-			cout << "camera position : " << camera_pos.transpose() << endl;
-			cout << "camera lookat point : " << camera_lookat_point.transpose() << endl;
-			cout << "camera up axis : " << camera_up_axis.transpose() << endl;
-			cout << endl;
+
+	if (consume_first_press(SHOW_CAMERA_POS_KEY)) {
+		cout << endl;
+		cout << "camera position : " << camera_pos.transpose() << endl;
+		cout << "camera lookat point : " << camera_lookat_point.transpose()
+				<< endl;
+		cout << "camera up axis : " << camera_up_axis.transpose() << endl;
+		cout << endl;
 	}
-	if (fRotPanTilt)
+
+	// handle mouse button presses
+	// 1 - mouse scrolling
+	if(!mouse_scroll_buffer.empty()) {
+		double zoom_offset = mouse_scroll_buffer.front();
+		mouse_scroll_buffer.pop_front();
+		camera_pos += 0.2 * zoom_offset * cam_depth_axis;
+		camera_lookat_point += 0.2 * zoom_offset * cam_depth_axis;		
+	}
+
+	// 2 - mouse left button for camera motion
+	double cursorx, cursory;
+	glfwGetCursorPos(_window, &cursorx, &cursory);
+	double mouse_x_increment = (cursorx - _last_cursorx);
+	double mouse_y_increment = (cursory - _last_cursory);
+
+	if (is_pressed(GLFW_MOUSE_BUTTON_LEFT))
 	{
-		// get current cursor position
-		double cursorx, cursory;
-		glfwGetCursorPos(_window, &cursorx, &cursory);
-		// TODO: might need to re-scale from screen units to physical units
-		double compass = 0.006 * (cursorx - _last_cursorx);
-		double azimuth = 0.006 * (cursory - _last_cursory);
-		double radius = cam_depth_axis.norm();
-		Matrix3d m_tilt;
-		m_tilt = AngleAxisd(azimuth, -cam_right_axis);
-		camera_pos = camera_lookat_point + m_tilt * (camera_pos - camera_lookat_point);
-		Matrix3d m_pan;
-		m_pan = AngleAxisd(compass, -camera_up_axis);
-		camera_pos = camera_lookat_point + m_pan * (camera_pos - camera_lookat_point);
-		camera_up_axis = m_pan * camera_up_axis;
+		if (is_pressed(GLFW_KEY_LEFT_CONTROL)) {
+			Eigen::Vector3d cam_motion =
+				0.01 * (mouse_x_increment * cam_right_axis -
+						mouse_y_increment * camera_up_axis);
+			camera_pos -= cam_motion;
+			camera_lookat_point -= cam_motion;
+		} else if (is_pressed(GLFW_KEY_LEFT_ALT) || is_pressed(GLFW_KEY_LEFT_SHIFT)) {
+			Eigen::Vector3d cam_motion =
+				0.02 * mouse_y_increment * cam_depth_axis;
+			camera_pos -= cam_motion;
+			camera_lookat_point -= cam_motion;
+		} else {
+			Matrix3d m_tilt;
+			m_tilt = AngleAxisd(0.006 * mouse_y_increment, -cam_right_axis);
+			camera_pos = camera_lookat_point +
+						 m_tilt * (camera_pos - camera_lookat_point);
+			Matrix3d m_pan;
+			m_pan = AngleAxisd(0.006 * mouse_x_increment, -camera_up_axis);
+			camera_pos = camera_lookat_point +
+						 m_pan * (camera_pos - camera_lookat_point);
+			camera_up_axis = m_pan * camera_up_axis;
+		}
+	}
+	if (is_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
+		Eigen::Vector3d cam_motion =
+			0.01 * (mouse_x_increment * cam_right_axis -
+					mouse_y_increment * camera_up_axis);
+		camera_pos -= cam_motion;
+		camera_lookat_point -= cam_motion;
 	}
 	setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
-	// allows the user to drag on a link and apply a force
-	if (fRobotLinkSelect) {
-		if(fRobotLinkSelectReset) {
+	// 3 - mouse right button to generate a force/torque
+	if (is_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+		if(consume_first_press(GLFW_MOUSE_BUTTON_RIGHT)) {
 			for(auto widget : _ui_force_widgets) {
 				widget->setEnable(true);
 			}			
-			fRobotLinkSelectReset = false;
 		}
 
 		int wwidth_scr, wheight_scr;
