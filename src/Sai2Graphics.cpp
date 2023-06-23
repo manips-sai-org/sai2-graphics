@@ -316,7 +316,7 @@ void Sai2Graphics::getUITorques(const std::string& robot_name,
 	for (auto widget : _ui_force_widgets) {
 		if (robot_name == widget->getRobotName()) {
 			ret_torques =
-				widget->getUIJointTorques(!is_pressed(GLFW_KEY_LEFT_SHIFT));
+				widget->getUIJointTorques();
 			return;
 		}
 	}
@@ -435,6 +435,7 @@ void Sai2Graphics::updateDisplayedWorld() {
 
 	// 3 - mouse right button to generate a force/torque
 	if (is_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+
 		if (consume_first_press(GLFW_MOUSE_BUTTON_RIGHT)) {
 			for (auto widget : _ui_force_widgets) {
 				widget->setEnable(true);
@@ -448,6 +449,11 @@ void Sai2Graphics::updateDisplayedWorld() {
 		int viewy = floor(_last_cursory / wheight_scr * _window_height);
 
 		for (auto widget : _ui_force_widgets) {
+			if(is_pressed(GLFW_KEY_LEFT_SHIFT)) {
+				widget->setMomentMode();
+			} else {
+				widget->setForceMode();
+			}
 			widget->setInteractionParams(getCamera(camera_name), viewx,
 										 _window_height - viewy, _window_width,
 										 _window_height);

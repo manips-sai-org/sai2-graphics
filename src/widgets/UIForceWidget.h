@@ -32,11 +32,16 @@ public:
 	bool setInteractionParams(chai3d::cCamera *camera, int viewx, int viewy,
 							  int window_width, int window_height);
 
+	// setter and getter for the mode (force vs moment)
+	void setForceMode();
+	void setMomentMode();
+	bool isForceMode() const {return _force_mode;}
+
 	// get interaction force/moment
-	Eigen::Vector3d getUIForceOrMoment(const bool is_force) const;
+	Eigen::Vector3d getUIForceOrMoment() const;
 
 	// get interaction joint torques
-	Eigen::VectorXd getUIJointTorques(const bool is_force_applied) const;
+	Eigen::VectorXd getUIJointTorques() const;
 
 	const std::string getRobotName() { return _robot_name; }
 
@@ -87,6 +92,9 @@ private:
 	// maximum allowable force/moment
 	double _max_force;
 	double _max_moment;
+
+	// flag to know if we want to apply a force or moment
+	bool _force_mode;
 
 	// link on which force is being applied
 	std::string _link_name;

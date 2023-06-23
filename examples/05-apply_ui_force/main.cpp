@@ -26,6 +26,16 @@ int main() {
 
 	unsigned long long counter = 0;
 
+	cout << endl
+		 << "It is possible to interact with the displayed robot using the "
+			"right mouse button. A line will be displayed, illustrating the "
+			"applied force (or torque) on the robot, and the corresponding "
+			"torque on the robot joint will be printed to terminal periodically"
+		 << endl;
+	cout << "Righy mouse button: apply a force" << endl;
+	cout << "Righy mouse button + shift: apply a moment" << endl;
+	cout << endl;
+
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		// update graphics rendering and window contents

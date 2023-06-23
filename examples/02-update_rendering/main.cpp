@@ -1,6 +1,5 @@
-// This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Dynamics3D virtual world. A graphics model of
-// it is also shown using Chai3D.
+// This example application loads a URDF world file with a pendulum and a cube,
+// and updates their position continuously
 
 #include <iostream>
 #include <string>
@@ -23,10 +22,16 @@ int main() {
 	// robot joint pose
 	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
 
+    // object position and orientation
 	Eigen::Vector3d object_pos = Eigen::Vector3d(0, 0, -1.5);
 	Eigen::Matrix3d object_ori = Eigen::Matrix3d::Identity();
 
 	unsigned long long counter = 0;
+
+	cout << endl
+		 << "This example parses a world file containing a pedulum and a cube, "
+			"and updates their positions"
+		 << endl;
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {

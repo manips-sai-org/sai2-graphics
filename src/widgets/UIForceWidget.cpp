@@ -15,6 +15,8 @@ UIForceWidget::UIForceWidget(const std::string& robot_name,
 	_display_line->setShowEnabled(false);
 	// TODO: set default line display properties
 
+	setForceMode();
+
 	// set state to inactive initially
 	_state = Inactive;
 
@@ -35,6 +37,18 @@ void UIForceWidget::setEnable(bool enable) {
 		// hide display line
 		_display_line->setShowEnabled(false);
 	}
+}
+
+void UIForceWidget::setForceMode() {
+	_force_mode = true;
+	_display_line->m_colorPointA.setGreenYellowGreen();
+	_display_line->m_colorPointB.setGreenYellowGreen();
+}
+
+void UIForceWidget::setMomentMode() {
+	_force_mode = false;
+	_display_line->m_colorPointA.setBrownMaroon();
+	_display_line->m_colorPointB.setBrownMaroon();
 }
 
 // set current window and cursor properties
@@ -142,14 +156,14 @@ bool UIForceWidget::getRobotLinkInCamera(chai3d::cCamera* camera, int view_x,
 }
 
 // get interaction force
-Eigen::Vector3d UIForceWidget::getUIForceOrMoment(const bool is_force) const {
+Eigen::Vector3d UIForceWidget::getUIForceOrMoment() const {
 	// nothing to do if state is not active
 	if (_state == Disabled || _state == Inactive) {
 		return Eigen::Vector3d::Zero();
 	}
 
-	double stiffness = is_force ? _lin_spring_k : _rot_spring_k;
-	double max = is_force ? _max_force : _max_moment;
+	double stiffness = _force_mode ? _lin_spring_k : _rot_spring_k;
+	double max = _force_mode ? _max_force : _max_moment;
 
 	// calculate spring force in global frame
 	cVector3d temp = _display_line->m_pointB - _display_line->m_pointA;
@@ -165,17 +179,16 @@ Eigen::Vector3d UIForceWidget::getUIForceOrMoment(const bool is_force) const {
 }
 
 // get interaction joint torques
-Eigen::VectorXd UIForceWidget::getUIJointTorques(
-	const bool is_force_applied) const {
+Eigen::VectorXd UIForceWidget::getUIJointTorques() const {
 	// nothing to do if state is not active
 	if (_state == Disabled || _state == Inactive) {
 		return Eigen::VectorXd::Zero(_robot->dof());
 	}
 
-	Eigen::Vector3d force_or_moment = getUIForceOrMoment(is_force_applied);
+	Eigen::Vector3d force_or_moment = getUIForceOrMoment();
 
 	Eigen::MatrixXd J;
-	if (is_force_applied) {
+	if (_force_mode) {
 		_robot->Jv(J, _link_name, _link_local_pos);
 	} else {
 		_robot->Jw(J, _link_name);
