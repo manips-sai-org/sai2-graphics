@@ -15,15 +15,15 @@
 
 namespace chai3d {
 
-class cRobotBase: public cGenericObject {
+class cRobotBase : public cGenericObject {
 public:
 	/**
-     * @brief Creates a cRobotBase object. This is a simply a type 
-     * specialization for cGenericObject to be used for robot bases.
-     */
-	cRobotBase() {;}
+	 * @brief Creates a cRobotBase object. This is a simply a type
+	 * specialization for cGenericObject to be used for robot bases.
+	 */
+	cRobotBase() {}
 };
 
-}
+}  // namespace chai3d
 
-#endif //CRobotBaseH
+#endif	// CRobotBaseH

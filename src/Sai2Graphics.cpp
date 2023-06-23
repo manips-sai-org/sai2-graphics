@@ -6,26 +6,27 @@
  */
 
 #include "Sai2Graphics.h"
-#include "parser/UrdfToSai2Graphics.h"
-#include <unordered_map>
+
 #include <deque>
 #include <iostream>
+#include <unordered_map>
+
+#include "parser/UrdfToSai2Graphics.h"
 
 using namespace std;
 using namespace chai3d;
 
-namespace
-{
+namespace {
 // custom aliases that capture the key function
-#define ZOOM_IN_KEY 			GLFW_KEY_A
-#define ZOOM_OUT_KEY 			GLFW_KEY_Z
-#define CAMERA_RIGHT_KEY 		GLFW_KEY_RIGHT
-#define CAMERA_LEFT_KEY			GLFW_KEY_LEFT
-#define CAMERA_UP_KEY 			GLFW_KEY_UP
-#define CAMERA_DOWN_KEY 		GLFW_KEY_DOWN
-#define NEXT_CAMERA_KEY 		GLFW_KEY_N
-#define PREV_CAMERA_KEY 		GLFW_KEY_B
-#define SHOW_CAMERA_POS_KEY 	GLFW_KEY_S
+#define ZOOM_IN_KEY GLFW_KEY_A
+#define ZOOM_OUT_KEY GLFW_KEY_Z
+#define CAMERA_RIGHT_KEY GLFW_KEY_RIGHT
+#define CAMERA_LEFT_KEY GLFW_KEY_LEFT
+#define CAMERA_UP_KEY GLFW_KEY_UP
+#define CAMERA_DOWN_KEY GLFW_KEY_DOWN
+#define NEXT_CAMERA_KEY GLFW_KEY_N
+#define PREV_CAMERA_KEY GLFW_KEY_B
+#define SHOW_CAMERA_POS_KEY GLFW_KEY_S
 
 // map to store key presses. The first bool is true if the key is pressed and
 // false otherwise, the second bool is used as a flag to know if the initial key
@@ -85,85 +86,80 @@ bool consume_first_press(int key) {
 void glfwError(int error, const char* description) {
 	cerr << "GLFW Error: " << description << endl;
 	exit(1);
-	}
+}
 
-	// callback when a key is pressed
-	void keySelect(GLFWwindow *window, int key, int scancode, int action, int mods)
-	{
-		bool set = (action != GLFW_RELEASE);
-		if(key == GLFW_KEY_ESCAPE) {
-			// handle esc separately to exit application
-			glfwSetWindowShouldClose(window, GL_TRUE);
-		} else {
-			if(key_presses_map.count(key) > 0) {
-				key_presses_map.at(key).first = set;
-				if(!set) {
-					key_presses_map.at(key).second = true;
-				}
+// callback when a key is pressed
+void keySelect(GLFWwindow* window, int key, int scancode, int action,
+			   int mods) {
+	bool set = (action != GLFW_RELEASE);
+	if (key == GLFW_KEY_ESCAPE) {
+		// handle esc separately to exit application
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	} else {
+		if (key_presses_map.count(key) > 0) {
+			key_presses_map.at(key).first = set;
+			if (!set) {
+				key_presses_map.at(key).second = true;
 			}
 		}
-	}
-
-	// callback when a mouse button is pressed
-	void mouseClick(GLFWwindow *window, int button, int action, int mods)
-	{
-		bool set = (action != GLFW_RELEASE);
-		if(mouse_button_presses_map.count(button) > 0) {
-			mouse_button_presses_map.at(button).first = set;
-			if(!set) {
-				mouse_button_presses_map.at(button).second = true;
-			}
-		}
-	}
-
-	// callback when the mouse wheel is scrolled
-	void mouseScroll(GLFWwindow* window, double xoffset, double yoffset)
-	{
-		if(yoffset != 0) {
-			mouse_scroll_buffer.push_back(yoffset);
-		}
-	}
-
-	GLFWwindow *glfwInitialize(const std::string& window_name)
-	{
-		/*------- Set up visualization -------*/
-		// set up error callback
-		glfwSetErrorCallback(glfwError);
-
-		// initialize GLFW
-		glfwInit();
-
-		// retrieve resolution of computer display and position window accordingly
-		GLFWmonitor *primary = glfwGetPrimaryMonitor();
-		const GLFWvidmode *mode = glfwGetVideoMode(primary);
-
-		// information about computer screen and GLUT display window
-		int screenW = mode->width;
-		int screenH = mode->height;
-		int windowW = 0.8 * screenH;
-		int windowH = 0.5 * screenH;
-		int windowPosY = (screenH - windowH) / 2;
-		int windowPosX = windowPosY;
-
-		// create window and make it current context
-		glfwWindowHint(GLFW_VISIBLE, 0);
-		GLFWwindow *window = glfwCreateWindow(windowW, windowH, window_name.c_str(), NULL, NULL);
-		glfwSetWindowPos(window, windowPosX, windowPosY);
-		glfwShowWindow(window);
-		glfwMakeContextCurrent(window);
-		glfwSwapInterval(1);
-
-		return window;
 	}
 }
 
-namespace Sai2Graphics 
-{
+// callback when a mouse button is pressed
+void mouseClick(GLFWwindow* window, int button, int action, int mods) {
+	bool set = (action != GLFW_RELEASE);
+	if (mouse_button_presses_map.count(button) > 0) {
+		mouse_button_presses_map.at(button).first = set;
+		if (!set) {
+			mouse_button_presses_map.at(button).second = true;
+		}
+	}
+}
+
+// callback when the mouse wheel is scrolled
+void mouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
+	if (yoffset != 0) {
+		mouse_scroll_buffer.push_back(yoffset);
+	}
+}
+
+GLFWwindow* glfwInitialize(const std::string& window_name) {
+	/*------- Set up visualization -------*/
+	// set up error callback
+	glfwSetErrorCallback(glfwError);
+
+	// initialize GLFW
+	glfwInit();
+
+	// retrieve resolution of computer display and position window accordingly
+	GLFWmonitor* primary = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(primary);
+
+	// information about computer screen and GLUT display window
+	int screenW = mode->width;
+	int screenH = mode->height;
+	int windowW = 0.8 * screenH;
+	int windowH = 0.5 * screenH;
+	int windowPosY = (screenH - windowH) / 2;
+	int windowPosX = windowPosY;
+
+	// create window and make it current context
+	glfwWindowHint(GLFW_VISIBLE, 0);
+	GLFWwindow* window =
+		glfwCreateWindow(windowW, windowH, window_name.c_str(), NULL, NULL);
+	glfwSetWindowPos(window, windowPosX, windowPosY);
+	glfwShowWindow(window);
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
+
+	return window;
+}
+}  // namespace
+
+namespace Sai2Graphics {
 
 Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
-							const std::string& window_name,
-							bool verbose)
-{
+						   const std::string& window_name, bool verbose) {
 	// initialize a chai world
 	initializeWorld(path_to_world_file, verbose);
 	initializeWindow(window_name);
@@ -177,16 +173,19 @@ Sai2Graphics::~Sai2Graphics() {
 	_world = NULL;
 }
 
-void Sai2Graphics::resetWorld(const std::string& path_to_world_file, const bool verbose) {
+void Sai2Graphics::resetWorld(const std::string& path_to_world_file,
+							  const bool verbose) {
 	clearWorld();
 	initializeWorld(path_to_world_file, verbose);
 }
 
-void Sai2Graphics::initializeWorld(const std::string& path_to_world_file, const bool verbose) {
+void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
+								   const bool verbose) {
 	_world = new chai3d::cWorld();
-	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world, _robot_filenames, _camera_names, verbose);
+	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world,
+									_robot_filenames, _camera_names, verbose);
 	_current_camera_index = 0;
-	for(auto robot_filename : _robot_filenames) {
+	for (auto robot_filename : _robot_filenames) {
 		// get robot base object in chai world
 		cRobotBase* base = NULL;
 		for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
@@ -201,7 +200,9 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file, const 
 		Eigen::Affine3d T_robot_base;
 		T_robot_base.translation() = base->getLocalPos().eigen();
 		T_robot_base.linear() = base->getLocalRot().eigen();
-		_robot_models[robot_filename.first] = std::make_shared<Sai2Model::Sai2Model>(robot_filename.second, false, T_robot_base);
+		_robot_models[robot_filename.first] =
+			std::make_shared<Sai2Model::Sai2Model>(robot_filename.second, false,
+												   T_robot_base);
 	}
 }
 
@@ -264,52 +265,58 @@ void Sai2Graphics::updateDisplayedForceSensor(
 			"transformation matrix between link and sensor inconsistent "
 			"between the input force_data and the sensor_display in "
 			"Sai2Graphics::updateDisplayedForceSensor");
-			return;
+		return;
 	}
 	_force_sensor_displays.at(sensor_index)
 		->update(force_data._force_world_frame, force_data._moment_world_frame);
 }
 
-bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name, const std::string& link_name) const {
+bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name,
+										 const std::string& link_name) const {
 	auto it = _robot_models.find(robot_name);
-	if(it == _robot_models.end()) {
+	if (it == _robot_models.end()) {
 		return false;
 	}
-	if(link_name != "") {
+	if (link_name != "") {
 		return _robot_models.at(robot_name)->isLinkInRobot(link_name);
 	}
 	return true;
 }
 
-int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name, const std::string& link_name) const {
-	for(int i=0 ; i<_force_sensor_displays.size() ; ++i) {
+int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name,
+										 const std::string& link_name) const {
+	for (int i = 0; i < _force_sensor_displays.size(); ++i) {
 		if (_force_sensor_displays.at(i)->robot_name() == robot_name &&
 			_force_sensor_displays.at(i)->link_name() == link_name) {
-				return i;
+			return i;
 		}
 	}
 	return -1;
 }
 
 void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
-	if(!existsInGraphicsWorld(robot_name)) {
-		throw std::invalid_argument("robot not found in Sai2Graphics::addUIForceInteraction");
+	if (!existsInGraphicsWorld(robot_name)) {
+		throw std::invalid_argument(
+			"robot not found in Sai2Graphics::addUIForceInteraction");
 	}
-	for(auto widget : _ui_force_widgets) {
-		if(robot_name == widget->getRobotName()) {
+	for (auto widget : _ui_force_widgets) {
+		if (robot_name == widget->getRobotName()) {
 			return;
 		}
 	}
 	chai3d::cShapeLine* display_line = new chai3d::cShapeLine();
 	_world->addChild(display_line);
-	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(robot_name, _robot_models[robot_name], display_line));
+	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
+		robot_name, _robot_models[robot_name], display_line));
 }
 
-void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& ret_torques) {
+void Sai2Graphics::getUITorques(const std::string& robot_name,
+								Eigen::VectorXd& ret_torques) {
 	ret_torques.setZero();
-	for(auto widget : _ui_force_widgets) {
-		if(robot_name == widget->getRobotName()) {
-			ret_torques = widget->getUIJointTorques(!is_pressed(GLFW_KEY_LEFT_SHIFT));
+	for (auto widget : _ui_force_widgets) {
+		if (robot_name == widget->getRobotName()) {
+			ret_torques =
+				widget->getUIJointTorques(!is_pressed(GLFW_KEY_LEFT_SHIFT));
 			return;
 		}
 	}
@@ -317,13 +324,15 @@ void Sai2Graphics::getUITorques(const std::string& robot_name, Eigen::VectorXd& 
 
 void Sai2Graphics::updateDisplayedWorld() {
 	// swap camera if needed
-	if(consume_first_press(NEXT_CAMERA_KEY)) {
-		_current_camera_index = (_current_camera_index + 1) % _camera_names.size();
+	if (consume_first_press(NEXT_CAMERA_KEY)) {
+		_current_camera_index =
+			(_current_camera_index + 1) % _camera_names.size();
 	}
-	if(consume_first_press(PREV_CAMERA_KEY)) {
-		_current_camera_index = (_current_camera_index - 1) % _camera_names.size();
+	if (consume_first_press(PREV_CAMERA_KEY)) {
+		_current_camera_index =
+			(_current_camera_index - 1) % _camera_names.size();
 	}
-	const std::string camera_name = _camera_names[_current_camera_index]; 
+	const std::string camera_name = _camera_names[_current_camera_index];
 
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
@@ -369,18 +378,18 @@ void Sai2Graphics::updateDisplayedWorld() {
 		cout << endl;
 		cout << "camera position : " << camera_pos.transpose() << endl;
 		cout << "camera lookat point : " << camera_lookat_point.transpose()
-				<< endl;
+			 << endl;
 		cout << "camera up axis : " << camera_up_axis.transpose() << endl;
 		cout << endl;
 	}
 
 	// handle mouse button presses
 	// 1 - mouse scrolling
-	if(!mouse_scroll_buffer.empty()) {
+	if (!mouse_scroll_buffer.empty()) {
 		double zoom_offset = mouse_scroll_buffer.front();
 		mouse_scroll_buffer.pop_front();
 		camera_pos += 0.2 * zoom_offset * cam_depth_axis;
-		camera_lookat_point += 0.2 * zoom_offset * cam_depth_axis;		
+		camera_lookat_point += 0.2 * zoom_offset * cam_depth_axis;
 	}
 
 	// 2 - mouse left button for camera motion
@@ -389,15 +398,15 @@ void Sai2Graphics::updateDisplayedWorld() {
 	double mouse_x_increment = (cursorx - _last_cursorx);
 	double mouse_y_increment = (cursory - _last_cursory);
 
-	if (is_pressed(GLFW_MOUSE_BUTTON_LEFT))
-	{
+	if (is_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
 		if (is_pressed(GLFW_KEY_LEFT_CONTROL)) {
 			Eigen::Vector3d cam_motion =
 				0.01 * (mouse_x_increment * cam_right_axis -
 						mouse_y_increment * camera_up_axis);
 			camera_pos -= cam_motion;
 			camera_lookat_point -= cam_motion;
-		} else if (is_pressed(GLFW_KEY_LEFT_ALT) || is_pressed(GLFW_KEY_LEFT_SHIFT)) {
+		} else if (is_pressed(GLFW_KEY_LEFT_ALT) ||
+				   is_pressed(GLFW_KEY_LEFT_SHIFT)) {
 			Eigen::Vector3d cam_motion =
 				0.02 * mouse_y_increment * cam_depth_axis;
 			camera_pos -= cam_motion;
@@ -426,10 +435,10 @@ void Sai2Graphics::updateDisplayedWorld() {
 
 	// 3 - mouse right button to generate a force/torque
 	if (is_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
-		if(consume_first_press(GLFW_MOUSE_BUTTON_RIGHT)) {
-			for(auto widget : _ui_force_widgets) {
+		if (consume_first_press(GLFW_MOUSE_BUTTON_RIGHT)) {
+			for (auto widget : _ui_force_widgets) {
 				widget->setEnable(true);
-			}			
+			}
 		}
 
 		int wwidth_scr, wheight_scr;
@@ -438,18 +447,21 @@ void Sai2Graphics::updateDisplayedWorld() {
 		int viewx = floor(_last_cursorx / wwidth_scr * _window_width);
 		int viewy = floor(_last_cursory / wheight_scr * _window_height);
 
-		for(auto widget : _ui_force_widgets) {
-			widget->setInteractionParams(getCamera(camera_name), viewx, _window_height - viewy, _window_width, _window_height);
+		for (auto widget : _ui_force_widgets) {
+			widget->setInteractionParams(getCamera(camera_name), viewx,
+										 _window_height - viewy, _window_width,
+										 _window_height);
 		}
 	} else {
-		for(auto widget : _ui_force_widgets) {
+		for (auto widget : _ui_force_widgets) {
 			widget->setEnable(false);
-		}	
+		}
 	}
 	render(camera_name);
 }
 
-static void updateGraphicsLink(cRobotLink* link, std::shared_ptr<Sai2Model::Sai2Model> robot_model) {
+static void updateGraphicsLink(
+	cRobotLink* link, std::shared_ptr<Sai2Model::Sai2Model> robot_model) {
 	cVector3d local_pos;
 	cMatrix3d local_rot;
 
@@ -460,14 +472,16 @@ static void updateGraphicsLink(cRobotLink* link, std::shared_ptr<Sai2Model::Sai2
 	cGenericObject* parent = link->getParent();
 	std::string parent_name = parent->m_name;
 
-	// if parent is cRobotBase, then simply get transform relative to base from model
-	if (dynamic_cast<cRobotBase*> (parent) != NULL) {
+	// if parent is cRobotBase, then simply get transform relative to base from
+	// model
+	if (dynamic_cast<cRobotBase*>(parent) != NULL) {
 		Eigen::Affine3d T;
 		robot_model->transform(T, link_name);
 		local_pos = cVector3d(T.translation());
 		local_rot = cMatrix3d(T.rotation());
-	} else if (dynamic_cast<cRobotLink*> (parent) != NULL) {
-		// if parent is cRobotLink, then calculate transform for both links, then apply inverse transform
+	} else if (dynamic_cast<cRobotLink*>(parent) != NULL) {
+		// if parent is cRobotLink, then calculate transform for both links,
+		// then apply inverse transform
 		Eigen::Affine3d T_me, T_parent, T_rel;
 		robot_model->transform(T_me, link_name);
 		robot_model->transform(T_parent, parent_name);
@@ -475,7 +489,8 @@ static void updateGraphicsLink(cRobotLink* link, std::shared_ptr<Sai2Model::Sai2
 		local_pos = cVector3d(T_rel.translation());
 		local_rot = cMatrix3d(T_rel.rotation());
 	} else {
-		cerr << "Parent to link " << link_name << " is neither link nor base" << endl;
+		cerr << "Parent to link " << link_name << " is neither link nor base"
+			 << endl;
 		abort();
 		// TODO: throw exception
 	}
@@ -494,19 +509,22 @@ static void updateGraphicsLink(cRobotLink* link, std::shared_ptr<Sai2Model::Sai2
 
 // update frame for a particular robot
 void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
-									const Eigen::VectorXd& joint_angles) {
+									   const Eigen::VectorXd& joint_angles) {
 	// update corresponfing robot model
 	auto it = _robot_models.find(robot_name);
-	if(it == _robot_models.end()) {
-		throw std::invalid_argument("Robot not found in Sai2Graphics::updateRobotGraphics");
+	if (it == _robot_models.end()) {
+		throw std::invalid_argument(
+			"Robot not found in Sai2Graphics::updateRobotGraphics");
 	}
 	auto robot_model = _robot_models[robot_name];
-	if(joint_angles.size() != robot_model->q_size()) {
-		throw std::invalid_argument("size of joint angles inconsistent with robot model in Sai2Graphics::updateRobotGraphics");
+	if (joint_angles.size() != robot_model->q_size()) {
+		throw std::invalid_argument(
+			"size of joint angles inconsistent with robot model in "
+			"Sai2Graphics::updateRobotGraphics");
 	}
 	robot_model->set_q(joint_angles);
 	robot_model->updateKinematics();
-	
+
 	// get robot base object in chai world
 	cRobotBase* base = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
@@ -519,7 +537,7 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 		}
 	}
 	if (base == NULL) {
-		//TODO: throw exception
+		// TODO: throw exception
 		cerr << "Could not find robot in chai world: " << robot_name << endl;
 		abort();
 	}
@@ -531,14 +549,14 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 			updateGraphicsLink(link, robot_model);
 		}
 	}
-	// update shadow maps. TODO: consider moving out from here if it is too expensive
+	// update shadow maps. TODO: consider moving out from here if it is too
+	// expensive
 	_world->updateShadowMaps();
 }
 
 void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
-                         const Eigen::Vector3d& object_pos,
-                         const Eigen::Quaterniond object_ori)
-{
+										const Eigen::Vector3d& object_pos,
+										const Eigen::Quaterniond object_ori) {
 	cGenericObject* object = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
 		if (object_name == _world->getChild(i)->m_name) {
@@ -550,7 +568,7 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 		}
 	}
 	if (object == NULL) {
-		//TODO: throw exception
+		// TODO: throw exception
 		cerr << "Could not find object in chai world: " << object_name << endl;
 		abort();
 	}
@@ -562,12 +580,12 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 
 Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {
 	auto it = _robot_models.find(robot_name);
-	if(it == _robot_models.end()) {
-		throw std::invalid_argument("robot not found in Sai2Graphics::getRobotJointPos");
+	if (it == _robot_models.end()) {
+		throw std::invalid_argument(
+			"robot not found in Sai2Graphics::getRobotJointPos");
 	}
 	return _robot_models[robot_name]->q();
 }
-
 
 void Sai2Graphics::render(const std::string& camera_name) {
 	auto camera = getCamera(camera_name);
@@ -582,23 +600,26 @@ void Sai2Graphics::render(const std::string& camera_name) {
 
 // get current camera pose
 void Sai2Graphics::getCameraPose(const std::string& camera_name,
-									Eigen::Vector3d& ret_position,
-									Eigen::Vector3d& ret_vertical_axis,
-									Eigen::Vector3d& ret_lookat_point) {
+								 Eigen::Vector3d& ret_position,
+								 Eigen::Vector3d& ret_vertical_axis,
+								 Eigen::Vector3d& ret_lookat_point) {
 	auto camera = getCamera(camera_name);
 	cVector3d pos, vert, lookat;
-	pos = camera->getLocalPos(); ret_position << pos.x(), pos.y(), pos.z();
-	vert = camera->getUpVector(); ret_vertical_axis << vert.x(), vert.y(), vert.z();
-	lookat = camera->getLookVector(); ret_lookat_point << lookat.x(), lookat.y(), lookat.z();
+	pos = camera->getLocalPos();
+	ret_position << pos.x(), pos.y(), pos.z();
+	vert = camera->getUpVector();
+	ret_vertical_axis << vert.x(), vert.y(), vert.z();
+	lookat = camera->getLookVector();
+	ret_lookat_point << lookat.x(), lookat.y(), lookat.z();
 	ret_lookat_point += ret_position;
 }
 
 // set camera pose
 void Sai2Graphics::setCameraPose(const std::string& camera_name,
-									const Eigen::Vector3d& position,
-									const Eigen::Vector3d& vertical_axis,
-									const Eigen::Vector3d& lookat_point) {
- 	auto camera = getCamera(camera_name);
+								 const Eigen::Vector3d& position,
+								 const Eigen::Vector3d& vertical_axis,
+								 const Eigen::Vector3d& lookat_point) {
+	auto camera = getCamera(camera_name);
 	cVector3d pos(position[0], position[1], position[2]);
 	cVector3d vert(vertical_axis[0], vertical_axis[1], vertical_axis[2]);
 	cVector3d look(lookat_point[0], lookat_point[1], lookat_point[2]);
@@ -622,12 +643,13 @@ cCamera* Sai2Graphics::getCamera(const std::string& camera_name) {
 	if (!camera) {
 		cerr << "Could not find camera named " << camera_name << endl;
 		abort();
-		//TODO: throw exception instead
+		// TODO: throw exception instead
 	}
 	return camera;
 }
 
-cRobotLink* Sai2Graphics::findLinkObjectInParentLinkRecursive(cRobotLink* parent, const std::string& link_name) {
+cRobotLink* Sai2Graphics::findLinkObjectInParentLinkRecursive(
+	cRobotLink* parent, const std::string& link_name) {
 	// call on children
 	cRobotLink* child;
 	cRobotLink* ret_link = NULL;
@@ -638,14 +660,16 @@ cRobotLink* Sai2Graphics::findLinkObjectInParentLinkRecursive(cRobotLink* parent
 				ret_link = child;
 				break;
 			} else {
-				ret_link = findLinkObjectInParentLinkRecursive(child, link_name);
+				ret_link =
+					findLinkObjectInParentLinkRecursive(child, link_name);
 			}
 		}
 	}
 	return ret_link;
 }
 
-cRobotLink* Sai2Graphics::findLink(const std::string& robot_name, const std::string& link_name) {
+cRobotLink* Sai2Graphics::findLink(const std::string& robot_name,
+								   const std::string& link_name) {
 	// get robot base
 	cRobotBase* base = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
@@ -658,7 +682,7 @@ cRobotLink* Sai2Graphics::findLink(const std::string& robot_name, const std::str
 		}
 	}
 	if (base == NULL) {
-		//TODO: throw exception
+		// TODO: throw exception
 		cerr << "Could not find robot in chai world: " << robot_name << endl;
 		abort();
 	}
@@ -673,7 +697,8 @@ cRobotLink* Sai2Graphics::findLink(const std::string& robot_name, const std::str
 				target_link = base_link;
 				break;
 			} else {
-				target_link = findLinkObjectInParentLinkRecursive(base_link, link_name);
+				target_link =
+					findLinkObjectInParentLinkRecursive(base_link, link_name);
 				if (target_link != NULL) {
 					break;
 				}
@@ -683,9 +708,8 @@ cRobotLink* Sai2Graphics::findLink(const std::string& robot_name, const std::str
 	return target_link;
 }
 
-void Sai2Graphics::showLinkFrameRecursive(cRobotLink* parent,
-											bool show_frame,
-											const double frame_pointer_length) {
+void Sai2Graphics::showLinkFrameRecursive(cRobotLink* parent, bool show_frame,
+										  const double frame_pointer_length) {
 	// call on children
 	cRobotLink* child;
 	for (unsigned int i = 0; i < parent->getNumChildren(); ++i) {
@@ -699,10 +723,9 @@ void Sai2Graphics::showLinkFrameRecursive(cRobotLink* parent,
 }
 
 // Show frame for a particular link or all links on a robot.
-void Sai2Graphics::showLinkFrame(bool show_frame,
-                         			const std::string& robot_name,
-                         			const std::string& link_name,
-                         			const double frame_pointer_length) {
+void Sai2Graphics::showLinkFrame(bool show_frame, const std::string& robot_name,
+								 const std::string& link_name,
+								 const double frame_pointer_length) {
 	bool fShouldApplyAllLinks = false;
 	if (link_name.empty()) {
 		fShouldApplyAllLinks = true;
@@ -722,8 +745,9 @@ void Sai2Graphics::showLinkFrame(bool show_frame,
 			}
 		}
 		if (base == NULL) {
-			//TODO: throw exception
-			cerr << "Could not find robot in chai world: " << robot_name << endl;
+			// TODO: throw exception
+			cerr << "Could not find robot in chai world: " << robot_name
+				 << endl;
 			abort();
 		}
 		base->setWireMode(show_frame, true);
@@ -736,7 +760,8 @@ void Sai2Graphics::showLinkFrame(bool show_frame,
 			if (base_link != NULL) {
 				base_link->setFrameSize(frame_pointer_length, false);
 				base_link->setShowFrame(show_frame, false);
-				showLinkFrameRecursive(base_link, show_frame, frame_pointer_length);
+				showLinkFrameRecursive(base_link, show_frame,
+									   frame_pointer_length);
 			}
 		}
 	} else {
@@ -750,8 +775,8 @@ void Sai2Graphics::showLinkFrame(bool show_frame,
 
 // Show wire mesh for a particular link or all links on a robot.
 void Sai2Graphics::showWireMeshRender(bool show_wiremesh,
-									const std::string& robot_name,
-									const std::string& link_name) {
+									  const std::string& robot_name,
+									  const std::string& link_name) {
 	bool fShouldApplyAllLinks = false;
 	if (link_name.empty()) {
 		fShouldApplyAllLinks = true;
@@ -771,8 +796,9 @@ void Sai2Graphics::showWireMeshRender(bool show_wiremesh,
 			}
 		}
 		if (base == NULL) {
-			//TODO: throw exception
-			cerr << "Could not find robot in chai world: " << robot_name << endl;
+			// TODO: throw exception
+			cerr << "Could not find robot in chai world: " << robot_name
+				 << endl;
 			abort();
 		}
 		base->setWireMode(show_wiremesh, true);
@@ -784,4 +810,4 @@ void Sai2Graphics::showWireMeshRender(bool show_wiremesh,
 	}
 }
 
-}
+}  // namespace Sai2Graphics

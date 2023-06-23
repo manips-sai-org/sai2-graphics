@@ -2,8 +2,9 @@
 #ifndef CPYRAMID_H
 #define CPYRAMID_H
 
-#include <vector>
 #include <Eigen/Core>
+#include <vector>
+
 #include "chai3d.h"
 
 namespace chai3d {
@@ -13,35 +14,32 @@ namespace chai3d {
 // - x: aligned with one vertex of the base polygon
 // - z: from origin to apex
 
-class cPyramid: public chai3d::cGenericObject {
+class cPyramid : public chai3d::cGenericObject {
 public:
 	// ctor
 	/**
-     * @brief Creates a visual Capsule object in the Chai graphics world.
-     * @param num_sides_base Number of sides on the base polygon.
-     * @param length_base_side Length of any side of the base polygon.
-     * @param height Height of the pyramid.
-	 * @param use_base_center_vertex Whether a vertex should be added to the center of
-	 *  the base. If false, the mesh is not symmetric
-     */
-	cPyramid(uint num_sides_base,
-		double length_base_side,
-		double height,
-		bool use_base_center_vertex = true
-	);
+	 * @brief Creates a visual Capsule object in the Chai graphics world.
+	 * @param num_sides_base Number of sides on the base polygon.
+	 * @param length_base_side Length of any side of the base polygon.
+	 * @param height Height of the pyramid.
+	 * @param use_base_center_vertex Whether a vertex should be added to the
+	 * center of the base. If false, the mesh is not symmetric
+	 */
+	cPyramid(uint num_sides_base, double length_base_side, double height,
+			 bool use_base_center_vertex = true);
 
 	// dtor
 	virtual ~cPyramid();
 
-// protected member functions
+	// protected member functions
 protected:
 	// render: from parent class
 	virtual void render(chai3d::cRenderOptions& a_options);
 
-// private internal functions:
+	// private internal functions:
 	void generateLocalVertexList();
 
-// public data members. TODO: getters, setters
+	// public data members. TODO: getters, setters
 public:
 	/* ---- Graphic info ----*/
 	uint _num_sides_base;
@@ -69,17 +67,9 @@ public:
 };
 
 // function to create cMultiMesh for capsule shape
-void cCreatePyramid(cMesh* a_mesh, 
-    uint num_sides_base,
-	double length_base_side,
-	double height,
-	bool use_base_center_vertex = true
-);
+void cCreatePyramid(cMesh* a_mesh, uint num_sides_base, double length_base_side,
+					double height, bool use_base_center_vertex = true);
 
-} // namespace chai3d
+}  // namespace chai3d
 
-
-
-
-
-#endif // CPYRAMID_H
+#endif	// CPYRAMID_H

@@ -1,11 +1,11 @@
 // This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Dynamics3D virtual world. A graphics model of it is also shown using
-// Chai3D.
-
-#include "Sai2Graphics.h"
+// with physics and contact in a Dynamics3D virtual world. A graphics model of
+// it is also shown using Chai3D.
 
 #include <iostream>
 #include <string>
+
+#include "Sai2Graphics.h"
 
 using namespace std;
 
@@ -15,21 +15,21 @@ const string camera_name = "camera_fixed";
 const string object_name = "Box";
 
 int main() {
-    cout << "Loading URDF world model file: " << world_file << endl;
+	cout << "Loading URDF world model file: " << world_file << endl;
 
-    // load graphics scene
-    auto graphics = new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
+	// load graphics scene
+	auto graphics =
+		new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
 
-    unsigned long long counter = 0;
+	unsigned long long counter = 0;
 
-    // while window is open:
-    while (graphics->isWindowOpen()) {
+	// while window is open:
+	while (graphics->isWindowOpen()) {
+		// update graphics robot and object poses in graphics and render
+		graphics->updateDisplayedWorld();
 
-        // update graphics robot and object poses in graphics and render
-        graphics->updateDisplayedWorld();
+		counter++;
+	}
 
-        counter++;
-    }
-
-    return 0;
+	return 0;
 }
