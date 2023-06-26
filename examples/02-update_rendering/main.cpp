@@ -47,7 +47,7 @@ int main() {
 		graphics->updateRobotGraphics(robot_name, robot_q);
 		graphics->updateObjectGraphics(object_name, object_pos,
 									   Eigen::Quaterniond(object_ori));
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		counter++;
 	}

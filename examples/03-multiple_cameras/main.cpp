@@ -28,7 +28,7 @@ int main() {
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		// update graphics robot and object poses in graphics and render
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		counter++;
 	}

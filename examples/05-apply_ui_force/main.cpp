@@ -40,8 +40,8 @@ int main() {
 	while (graphics->isWindowOpen()) {
 		// update graphics rendering and window contents
 		graphics->updateRobotGraphics(robot_name, q_robot);
-		graphics->updateDisplayedWorld();
-		graphics->getUITorques(robot_name, ui_interaction_torques);
+		graphics->renderGraphicsWorld();
+		ui_interaction_torques = graphics->getUITorques(robot_name);
 
 		if (counter % 50 == 0) {
 			std::cout << "interaction torques: "

@@ -35,7 +35,7 @@ int main() {
 			q_robot2(0) -= 0.01;
 			graphics->updateRobotGraphics(robot_name_2, q_robot2);
 		}
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		// swap to second world
 		if (counter % 700 == 350) {
