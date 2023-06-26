@@ -37,7 +37,7 @@ int main() {
 	while (graphics->isWindowOpen()) {
 		// update graphics the rendering and the window display.
 		// this automatically waits for the correct amount of time
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 	}
 
 	return 0;

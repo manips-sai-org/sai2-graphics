@@ -36,7 +36,7 @@ int main() {
 	while (graphics->isWindowOpen()) {
 		// update graphics robot and object poses in graphics and render
 		graphics->updateDisplayedForceSensor(force_data);
-		graphics->updateDisplayedWorld();
+		graphics->renderGraphicsWorld();
 
 		if (counter == 200) {
 			cout << "display vertical force" << endl;
