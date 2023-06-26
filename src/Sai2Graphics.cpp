@@ -523,12 +523,12 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 			"Robot not found in Sai2Graphics::updateRobotGraphics");
 	}
 	auto robot_model = _robot_models[robot_name];
-	if (joint_angles.size() != robot_model->q_size()) {
+	if (joint_angles.size() != robot_model->qSize()) {
 		throw std::invalid_argument(
 			"size of joint angles inconsistent with robot model in "
 			"Sai2Graphics::updateRobotGraphics");
 	}
-	robot_model->set_q(joint_angles);
+	robot_model->setQ(joint_angles);
 	robot_model->updateKinematics();
 
 	// get robot base object in chai world
