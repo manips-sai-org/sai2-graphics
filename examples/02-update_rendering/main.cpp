@@ -22,7 +22,7 @@ int main() {
 	// robot joint pose
 	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
 
-    // object position and orientation
+	// object position and orientation
 	Eigen::Affine3d object_pose = Eigen::Affine3d::Identity();
 	object_pose.translation() = Eigen::Vector3d(0, 0, -1.5);
 
@@ -40,8 +40,9 @@ int main() {
 
 		// update object position
 		object_pose.translation()(1) = -0.4 * sin((double)counter / 100);
-		object_pose.rotation() *= AngleAxisd(1.0 / 100.0, Eigen::Vector3d::UnitX())
-						  .toRotationMatrix();
+		object_pose.linear() *=
+			AngleAxisd(1.0 / 100.0, Eigen::Vector3d::UnitX())
+				.toRotationMatrix();
 
 		// update graphics robot and object poses in graphics and render
 		graphics->updateRobotGraphics(robot_name, robot_q);
