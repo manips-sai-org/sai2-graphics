@@ -558,8 +558,7 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 }
 
 void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
-										const Eigen::Vector3d& object_pos,
-										const Eigen::Quaterniond object_ori) {
+										const Eigen::Affine3d& object_pose) {
 	cGenericObject* object = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
 		if (object_name == _world->getChild(i)->m_name) {
@@ -577,8 +576,8 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 	}
 
 	// update pose
-	object->setLocalPos(object_pos);
-	object->setLocalRot(object_ori.toRotationMatrix());
+	object->setLocalPos(object_pose.translation());
+	object->setLocalRot(object_pose.rotation());
 }
 
 Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {

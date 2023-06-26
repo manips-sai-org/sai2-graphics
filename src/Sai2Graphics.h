@@ -101,12 +101,10 @@ public:
 	 * @brief Update the graphics model for an object in the virtual world.
 	 * @param object_name Name of the object for which model update is
 	 * considered.
-	 * @param object_pos  position of the object in the world
-	 * @param object_ori  orientation of the object in the world
+	 * @param object_pose  pose of the object in the world
 	 */
 	void updateObjectGraphics(const std::string& object_name,
-							  const Eigen::Vector3d& object_pos,
-							  const Eigen::Quaterniond object_ori);
+							  const Eigen::Affine3d& object_pose);
 
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 

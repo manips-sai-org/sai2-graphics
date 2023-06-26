@@ -23,8 +23,8 @@ int main() {
 	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
 
     // object position and orientation
-	Eigen::Vector3d object_pos = Eigen::Vector3d(0, 0, -1.5);
-	Eigen::Matrix3d object_ori = Eigen::Matrix3d::Identity();
+	Eigen::Affine3d object_pose = Eigen::Affine3d::Identity();
+	object_pose.translation() = Eigen::Vector3d(0, 0, -1.5);
 
 	unsigned long long counter = 0;
 
@@ -39,14 +39,13 @@ int main() {
 		robot_q << (double)counter / 100.0;
 
 		// update object position
-		object_pos(1) = -0.4 * sin((double)counter / 100);
-		object_ori *= AngleAxisd(1.0 / 100.0, Eigen::Vector3d::UnitX())
+		object_pose.translation()(1) = -0.4 * sin((double)counter / 100);
+		object_pose.rotation() *= AngleAxisd(1.0 / 100.0, Eigen::Vector3d::UnitX())
 						  .toRotationMatrix();
 
 		// update graphics robot and object poses in graphics and render
 		graphics->updateRobotGraphics(robot_name, robot_q);
-		graphics->updateObjectGraphics(object_name, object_pos,
-									   Eigen::Quaterniond(object_ori));
+		graphics->updateObjectGraphics(object_name, object_pose);
 		graphics->renderGraphicsWorld();
 
 		counter++;
