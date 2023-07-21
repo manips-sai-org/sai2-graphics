@@ -56,14 +56,12 @@ public:
 	bool isWindowOpen() { return !glfwWindowShouldClose(_window); }
 
 	/**
-	 * @brief updates the window display with the most current information
-	 * needs to ba called after updateGraphics, updateObjectGraphics
-	 * (and render for now) if the changes of robot or object positions are to
-	 * be displayed
+	 * @brief renders the graphics world from the current camera (needs to be
+	 * called after all the update functions i.e. updateRobotGraphics)
 	 *
 	 * @param camera_name the name of the camera to display
 	 */
-	void updateDisplayedWorld();
+	void renderGraphicsWorld();
 
 	/**
 	 * @brief remove all interactions widgets
@@ -78,10 +76,9 @@ public:
 	 * robot link) for a given robot
 	 *
 	 * @param robot_name name of the robot for which we want the joint torques
-	 * @param ret_torques joint torques for that robot
+	 * @return joint torques from UI interaction for that robot
 	 */
-	void getUITorques(const std::string& robot_name,
-					  Eigen::VectorXd& ret_torques);
+	Eigen::VectorXd getUITorques(const std::string& robot_name);
 
 	/**
 	 * @brief Enable interacting with a specific robot by right clicking on the
@@ -104,12 +101,10 @@ public:
 	 * @brief Update the graphics model for an object in the virtual world.
 	 * @param object_name Name of the object for which model update is
 	 * considered.
-	 * @param object_pos  position of the object in the world
-	 * @param object_ori  orientation of the object in the world
+	 * @param object_pose  pose of the object in the world
 	 */
 	void updateObjectGraphics(const std::string& object_name,
-							  const Eigen::Vector3d& object_pos,
-							  const Eigen::Quaterniond object_ori);
+							  const Eigen::Affine3d& object_pose);
 
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 
@@ -133,7 +128,7 @@ public:
 	 * @param robot_name Robot name.
 	 * @param robot_name Link name. If left blank, all link frames are shown.
 	 */
-	void showWireMeshRender(bool show_wiremesh, const std::string& robot_name,
+	void showWireMesh(bool show_wiremesh, const std::string& robot_name,
 							const std::string& link_name = "");
 
 	void setBackgroundColor(const double red, const double green,

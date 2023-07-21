@@ -310,19 +310,16 @@ void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
 		robot_name, _robot_models[robot_name], display_line));
 }
 
-void Sai2Graphics::getUITorques(const std::string& robot_name,
-								Eigen::VectorXd& ret_torques) {
-	ret_torques.setZero();
+Eigen::VectorXd Sai2Graphics::getUITorques(const std::string& robot_name) {
 	for (auto widget : _ui_force_widgets) {
 		if (robot_name == widget->getRobotName()) {
-			ret_torques =
-				widget->getUIJointTorques();
-			return;
+			return widget->getUIJointTorques();
 		}
 	}
+	return Eigen::VectorXd::Zero(_robot_models[robot_name]->qSize());
 }
 
-void Sai2Graphics::updateDisplayedWorld() {
+void Sai2Graphics::renderGraphicsWorld() {
 	// swap camera if needed
 	if (consume_first_press(NEXT_CAMERA_KEY)) {
 		_current_camera_index =
@@ -561,8 +558,7 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 }
 
 void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
-										const Eigen::Vector3d& object_pos,
-										const Eigen::Quaterniond object_ori) {
+										const Eigen::Affine3d& object_pose) {
 	cGenericObject* object = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
 		if (object_name == _world->getChild(i)->m_name) {
@@ -580,8 +576,8 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 	}
 
 	// update pose
-	object->setLocalPos(object_pos);
-	object->setLocalRot(object_ori.toRotationMatrix());
+	object->setLocalPos(object_pose.translation());
+	object->setLocalRot(object_pose.rotation());
 }
 
 Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {
@@ -780,7 +776,7 @@ void Sai2Graphics::showLinkFrame(bool show_frame, const std::string& robot_name,
 }
 
 // Show wire mesh for a particular link or all links on a robot.
-void Sai2Graphics::showWireMeshRender(bool show_wiremesh,
+void Sai2Graphics::showWireMesh(bool show_wiremesh,
 									  const std::string& robot_name,
 									  const std::string& link_name) {
 	bool fShouldApplyAllLinks = false;
