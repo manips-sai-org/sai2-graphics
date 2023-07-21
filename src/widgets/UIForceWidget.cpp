@@ -63,8 +63,8 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 								 window_height, _link_name, _link_local_pos);
 		if (fLinkSelected) {
 			_state = Active;
-			_robot->positionInWorld(_initial_click_point, _link_name,
-									_link_local_pos);
+			_initial_click_point =
+				_robot->positionInWorld(_link_name, _link_local_pos);
 		} else {
 			_state = Disabled;
 			return false;
@@ -74,7 +74,7 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 	if (_state == Active) {
 		// update line point A in global graphics frame
 		Eigen::Vector3d pointA_pos_base;
-		_robot->positionInWorld(pointA_pos_base, _link_name, _link_local_pos);
+		pointA_pos_base = _robot->positionInWorld(_link_name, _link_local_pos);
 		_display_line->m_pointA.set(pointA_pos_base[0], pointA_pos_base[1],
 									pointA_pos_base[2]);
 
@@ -189,9 +189,9 @@ Eigen::VectorXd UIForceWidget::getUIJointTorques() const {
 
 	Eigen::MatrixXd J;
 	if (_force_mode) {
-		_robot->Jv(J, _link_name, _link_local_pos);
+		J = _robot->Jv(_link_name, _link_local_pos);
 	} else {
-		_robot->Jw(J, _link_name);
+		J = _robot->Jw(_link_name);
 	}
 	return (J.transpose() * force_or_moment);
 }

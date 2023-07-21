@@ -32,8 +32,8 @@ ForceSensorDisplay::ForceSensorDisplay(
 
 void ForceSensorDisplay::update(const Eigen::Vector3d& force_global_frame,
 								const Eigen::Vector3d& moment_global_frame) {
-	Eigen::Vector3d epointA;
-	_robot->positionInWorld(epointA, _link_name, _T_link_sensor.translation());
+	Eigen::Vector3d epointA =
+		_robot->positionInWorld(_link_name, _T_link_sensor.translation());
 
 	// force:
 	_display_line_force->m_pointA = chai3d::cVector3d(epointA);
