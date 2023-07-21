@@ -201,8 +201,8 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 		T_robot_base.translation() = base->getLocalPos().eigen();
 		T_robot_base.linear() = base->getLocalRot().eigen();
 		_robot_models[robot_filename.first] =
-			std::make_shared<Sai2Model::Sai2Model>(robot_filename.second, false,
-												   T_robot_base);
+			std::make_shared<Sai2Model::Sai2Model>(robot_filename.second);
+		_robot_models[robot_filename.first]->setTRobotBase(T_robot_base);
 	}
 }
 
@@ -225,16 +225,16 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 
 void Sai2Graphics::addForceSensorDisplay(
 	const Sai2Model::ForceSensorData& sensor_data) {
-	if (!existsInGraphicsWorld(sensor_data._robot_name,
-							   sensor_data._link_name)) {
+	if (!existsInGraphicsWorld(sensor_data.robot_name,
+							   sensor_data.link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
 					 "unexisting robot or link in "
 					 "Sai2Simulation::addForceSensorDisplay\n"
 				  << std::endl;
 		return;
 	}
-	if (findForceSensorDisplay(sensor_data._robot_name,
-							   sensor_data._link_name) != -1) {
+	if (findForceSensorDisplay(sensor_data.robot_name,
+							   sensor_data.link_name) != -1) {
 		std::cout << "\n\nWARNING: only one force sensor is supported per "
 					 "link in Sai2Graphics::addForceSensorDisplay. Not "
 					 "adding the second one\n"
@@ -242,25 +242,25 @@ void Sai2Graphics::addForceSensorDisplay(
 		return;
 	}
 	_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
-		sensor_data._robot_name, sensor_data._link_name,
-		sensor_data._transform_in_link, _robot_models[sensor_data._robot_name],
+		sensor_data.robot_name, sensor_data.link_name,
+		sensor_data.transform_in_link, _robot_models[sensor_data.robot_name],
 		_world));
 }
 
 void Sai2Graphics::updateDisplayedForceSensor(
 	const Sai2Model::ForceSensorData& force_data) {
 	int sensor_index =
-		findForceSensorDisplay(force_data._robot_name, force_data._link_name);
+		findForceSensorDisplay(force_data.robot_name, force_data.link_name);
 	if (sensor_index == -1) {
 		throw std::invalid_argument(
-			"no force sensor on robot " + force_data._robot_name + " on link " +
-			force_data._link_name +
+			"no force sensor on robot " + force_data.robot_name + " on link " +
+			force_data.link_name +
 			". Impossible to update the displayed force in graphics world");
 		return;
 	}
 	if (!_force_sensor_displays.at(sensor_index)
 			 ->T_link_sensor()
-			 .isApprox(force_data._transform_in_link)) {
+			 .isApprox(force_data.transform_in_link)) {
 		throw std::invalid_argument(
 			"transformation matrix between link and sensor inconsistent "
 			"between the input force_data and the sensor_display in "
@@ -268,7 +268,7 @@ void Sai2Graphics::updateDisplayedForceSensor(
 		return;
 	}
 	_force_sensor_displays.at(sensor_index)
-		->update(force_data._force_world_frame, force_data._moment_world_frame);
+		->update(force_data.force_world_frame, force_data.moment_world_frame);
 }
 
 bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name,
@@ -478,16 +478,15 @@ static void updateGraphicsLink(
 	// if parent is cRobotBase, then simply get transform relative to base from
 	// model
 	if (dynamic_cast<cRobotBase*>(parent) != NULL) {
-		Eigen::Affine3d T;
-		robot_model->transform(T, link_name);
+		Eigen::Affine3d T = robot_model->transform(link_name);
 		local_pos = cVector3d(T.translation());
 		local_rot = cMatrix3d(T.rotation());
 	} else if (dynamic_cast<cRobotLink*>(parent) != NULL) {
 		// if parent is cRobotLink, then calculate transform for both links,
 		// then apply inverse transform
 		Eigen::Affine3d T_me, T_parent, T_rel;
-		robot_model->transform(T_me, link_name);
-		robot_model->transform(T_parent, parent_name);
+		T_me = robot_model->transform(link_name);
+		T_parent = robot_model->transform(parent_name);
 		T_rel = T_parent.inverse() * T_me;
 		local_pos = cVector3d(T_rel.translation());
 		local_rot = cMatrix3d(T_rel.rotation());

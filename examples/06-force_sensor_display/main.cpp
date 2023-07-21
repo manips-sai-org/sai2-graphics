@@ -19,8 +19,8 @@ int main() {
 
 	// create force data and force display
 	Sai2Model::ForceSensorData force_data = Sai2Model::ForceSensorData();
-	force_data._robot_name = "PBot";
-	force_data._link_name = "cube_link";
+	force_data.robot_name = "PBot";
+	force_data.link_name = "cube_link";
 	graphics->addForceSensorDisplay(force_data);
 
 	unsigned long long counter = 0;
@@ -40,15 +40,15 @@ int main() {
 
 		if (counter == 200) {
 			cout << "display vertical force" << endl;
-			force_data._force_world_frame(2) = -10.0;
+			force_data.force_world_frame(2) = -10.0;
 		}
 		if (counter == 400) {
 			cout << "display tangential moment" << endl;
-			force_data._moment_world_frame(1) = 1.0;
+			force_data.moment_world_frame(1) = 1.0;
 		}
 		if (counter == 600) {
 			cout << "display tangential and vertical force" << endl;
-			force_data._force_world_frame(1) = 5.0;
+			force_data.force_world_frame(1) = 5.0;
 		}
 
 		counter++;
