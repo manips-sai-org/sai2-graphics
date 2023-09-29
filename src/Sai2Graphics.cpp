@@ -212,6 +212,7 @@ void Sai2Graphics::clearWorld() {
 	_robot_models.clear();
 	_camera_names.clear();
 	_force_sensor_displays.clear();
+	_ui_force_widgets.clear();
 }
 
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
@@ -317,6 +318,14 @@ Eigen::VectorXd Sai2Graphics::getUITorques(const std::string& robot_name) {
 		}
 	}
 	return Eigen::VectorXd::Zero(_robot_models[robot_name]->qSize());
+}
+
+const std::vector<std::string> Sai2Graphics::getRobotNames() const {
+	std::vector<std::string> robot_names;
+	for (const auto& it : _robot_filenames) {
+		robot_names.push_back(it.first);
+	}
+	return robot_names;
 }
 
 void Sai2Graphics::renderGraphicsWorld() {

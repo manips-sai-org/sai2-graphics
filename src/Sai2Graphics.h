@@ -90,6 +90,14 @@ public:
 	void addUIForceInteraction(const std::string& robot_name);
 
 	/**
+	 * @brief Get the the names of the robots in the graphics world
+	 * 
+	 * @return vector of robot names
+	 */
+	const std::vector<std::string> getRobotNames() const;
+
+
+	/**
 	 * @brief Update the graphics model for a robot in the virtual world.
 	 * @param robot_name Name of the robot for which model update is considered.
 	 * @param joint_angles joint angles for that robot
