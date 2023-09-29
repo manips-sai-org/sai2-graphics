@@ -23,8 +23,7 @@ int main() {
 	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
 
 	// object position and orientation
-	Eigen::Affine3d object_pose = Eigen::Affine3d::Identity();
-	object_pose.translation() = Eigen::Vector3d(0, 0, -1.5);
+	Eigen::Affine3d object_pose = graphics->getObjectPose(object_name);
 
 	unsigned long long counter = 0;
 

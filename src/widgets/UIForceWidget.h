@@ -21,6 +21,10 @@ public:
 				  std::shared_ptr<Sai2Model::Sai2Model> robot,
 				  chai3d::cShapeLine *display_line);
 
+	UIForceWidget(const std::string &object_name,
+				  std::shared_ptr<Eigen::Affine3d> object_pose,
+				  chai3d::cShapeLine *display_line);
+
 	// set state
 	void setEnable(bool enable);
 
@@ -43,7 +47,7 @@ public:
 	// get interaction joint torques
 	Eigen::VectorXd getUIJointTorques() const;
 
-	const std::string getRobotName() { return _robot_name; }
+	const std::string getRobotOrObjectName() { return _robot_or_object_name; }
 
 	// dtor:
 	~UIForceWidget() {}
@@ -74,13 +78,12 @@ private:
 	chai3d::cShapeLine *_display_line;
 
 	// name of robot
-	std::string _robot_name;
+	std::string _robot_or_object_name;
 
 	// robot model this UIForceWidget is associated with
 	std::shared_ptr<Sai2Model::Sai2Model> _robot;
-
-	// handle to graphics interface to query interaction state change
-	// Sai2Graphics* _graphics;
+	std::shared_ptr<Eigen::Affine3d> _object_pose;
+	bool _is_robot;
 
 	// current state of the widget
 	UIForceWidgetState _state;

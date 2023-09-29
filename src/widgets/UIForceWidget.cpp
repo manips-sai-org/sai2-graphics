@@ -10,17 +10,33 @@ namespace Sai2Graphics {
 UIForceWidget::UIForceWidget(const std::string& robot_name,
 							 std::shared_ptr<Sai2Model::Sai2Model> robot,
 							 chai3d::cShapeLine* display_line)
-	: _robot_name(robot_name), _robot(robot), _display_line(display_line) {
+	: _robot_or_object_name(robot_name), _robot(robot), _display_line(display_line), _is_robot(true) {
 	_display_line->m_name = "line_ui_force_" + robot_name;
 	_display_line->setShowEnabled(false);
-	// TODO: set default line display properties
 
 	setForceMode();
 
 	// set state to inactive initially
 	_state = Inactive;
 
-	// TODO: update defaults parameters below
+	_max_force = 20;	 // N
+	_lin_spring_k = 20;	 // N/m
+	_max_moment = 2;	 // Nm
+	_rot_spring_k = 2;	 // Nm/Rad
+}
+
+UIForceWidget::UIForceWidget(const std::string& object_name,
+							 std::shared_ptr<Eigen::Affine3d> object_pose,
+							 chai3d::cShapeLine* display_line)
+	: _robot_or_object_name(object_name), _object_pose(object_pose), _display_line(display_line), _is_robot(false) {
+	_display_line->m_name = "line_ui_force_" + object_name;
+	_display_line->setShowEnabled(false);
+
+	setForceMode();
+
+	// set state to inactive initially
+	_state = Inactive;
+
 	_max_force = 20;	 // N
 	_lin_spring_k = 20;	 // N/m
 	_max_moment = 2;	 // Nm
@@ -63,8 +79,7 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 								 window_height, _link_name, _link_local_pos);
 		if (fLinkSelected) {
 			_state = Active;
-			_initial_click_point =
-				_robot->positionInWorld(_link_name, _link_local_pos);
+			_initial_click_point = _is_robot ? _robot->positionInWorld(_link_name, _link_local_pos) : *_object_pose * _link_local_pos;
 		} else {
 			_state = Disabled;
 			return false;
@@ -74,7 +89,7 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 	if (_state == Active) {
 		// update line point A in global graphics frame
 		Eigen::Vector3d pointA_pos_base;
-		pointA_pos_base = _robot->positionInWorld(_link_name, _link_local_pos);
+		pointA_pos_base = _is_robot ? _robot->positionInWorld(_link_name, _link_local_pos) : *_object_pose * _link_local_pos;
 		_display_line->m_pointA.set(pointA_pos_base[0], pointA_pos_base[1],
 									pointA_pos_base[2]);
 
@@ -129,16 +144,22 @@ bool UIForceWidget::getRobotLinkInCamera(chai3d::cCamera* camera, int view_x,
 		}
 		auto object_parent = object->getParent();
 		bool f_found_parent_link = false;
+		bool clicked_at_root = true;
 		cTransform transform = object->getLocalTransform();
 		cRobotLink* link;
 		while (object_parent != NULL) {
-			if (_robot_name == object_parent->m_name) {
+			if (_robot_or_object_name == object_parent->m_name) {
+				if(clicked_at_root) {
+					pos = transform * pos;
+					ret_pos << pos.x(), pos.y(), pos.z();
+				}
 				return true;
 			}
 			if (!f_found_parent_link) {
 				// try casting to cRobotLink
 				link = dynamic_cast<cRobotLink*>(object_parent);
 				if (link != NULL) {
+					clicked_at_root = false;
 					f_found_parent_link = true;
 					ret_link_name = link->m_name;
 					// position is with respect to the graphic object. need to
@@ -182,10 +203,22 @@ Eigen::Vector3d UIForceWidget::getUIForceOrMoment() const {
 Eigen::VectorXd UIForceWidget::getUIJointTorques() const {
 	// nothing to do if state is not active
 	if (_state == Disabled || _state == Inactive) {
-		return Eigen::VectorXd::Zero(_robot->dof());
+		return _is_robot ? Eigen::VectorXd::Zero(_robot->dof()) : Eigen::VectorXd::Zero(6);
 	}
 
 	Eigen::Vector3d force_or_moment = getUIForceOrMoment();
+
+	if(!_is_robot) {
+		Eigen::VectorXd torques = Eigen::VectorXd::Zero(6);
+		if(_force_mode) {
+			torques.head(3) = force_or_moment;
+		}
+		else {
+			torques.tail(3) = force_or_moment;
+		}
+		return torques;
+	}
+
 
 	Eigen::MatrixXd J;
 	if (_force_mode) {

@@ -183,7 +183,7 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 								   const bool verbose) {
 	_world = new chai3d::cWorld();
 	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world,
-									_robot_filenames, _camera_names, verbose);
+									_robot_filenames, _object_poses, _camera_names, verbose);
 	_current_camera_index = 0;
 	for (auto robot_filename : _robot_filenames) {
 		// get robot base object in chai world
@@ -210,6 +210,7 @@ void Sai2Graphics::clearWorld() {
 	delete _world;
 	_robot_filenames.clear();
 	_robot_models.clear();
+	_object_poses.clear();
 	_camera_names.clear();
 	_force_sensor_displays.clear();
 	_ui_force_widgets.clear();
@@ -226,7 +227,7 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 
 void Sai2Graphics::addForceSensorDisplay(
 	const Sai2Model::ForceSensorData& sensor_data) {
-	if (!existsInGraphicsWorld(sensor_data.robot_name,
+	if (!robotExistsInGraphicsWorld(sensor_data.robot_name,
 							   sensor_data.link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
 					 "unexisting robot or link in "
@@ -272,14 +273,23 @@ void Sai2Graphics::updateDisplayedForceSensor(
 		->update(force_data.force_world_frame, force_data.moment_world_frame);
 }
 
-bool Sai2Graphics::existsInGraphicsWorld(const std::string& robot_name,
-										 const std::string& link_name) const {
+bool Sai2Graphics::robotExistsInGraphicsWorld(
+	const std::string& robot_name, const std::string& link_name) const {
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
 		return false;
 	}
 	if (link_name != "") {
 		return _robot_models.at(robot_name)->isLinkInRobot(link_name);
+	}
+	return true;
+}
+
+bool Sai2Graphics::objectExistsInGraphicsWorld(
+	const std::string& object_name) const {
+	auto it = _object_poses.find(object_name);
+	if (it == _object_poses.end()) {
+		return false;
 	}
 	return true;
 }
@@ -295,29 +305,45 @@ int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name,
 	return -1;
 }
 
-void Sai2Graphics::addUIForceInteraction(const std::string& robot_name) {
-	if (!existsInGraphicsWorld(robot_name)) {
+void Sai2Graphics::addUIForceInteraction(const std::string& robot_or_object_name) {
+	bool is_robot = robotExistsInGraphicsWorld(robot_or_object_name);
+	bool is_object = objectExistsInGraphicsWorld(robot_or_object_name);
+	if (!is_robot && !is_object) {
 		throw std::invalid_argument(
-			"robot not found in Sai2Graphics::addUIForceInteraction");
+			"robot or object not found in Sai2Graphics::addUIForceInteraction");
 	}
 	for (auto widget : _ui_force_widgets) {
-		if (robot_name == widget->getRobotName()) {
+		if (robot_or_object_name == widget->getRobotOrObjectName()) {
 			return;
 		}
 	}
 	chai3d::cShapeLine* display_line = new chai3d::cShapeLine();
 	_world->addChild(display_line);
-	_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
-		robot_name, _robot_models[robot_name], display_line));
+	if(is_robot) {
+		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
+			robot_or_object_name, _robot_models[robot_or_object_name], display_line));
+	} else {
+		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
+			robot_or_object_name, _object_poses[robot_or_object_name], display_line));
+	}
 }
 
-Eigen::VectorXd Sai2Graphics::getUITorques(const std::string& robot_name) {
+Eigen::VectorXd Sai2Graphics::getUITorques(
+	const std::string& robot_or_object_name) {
+	bool is_robot = robotExistsInGraphicsWorld(robot_or_object_name);
+	bool is_object = objectExistsInGraphicsWorld(robot_or_object_name);
+	if (!is_robot && !is_object) {
+		throw std::invalid_argument(
+			"robot or object not found in Sai2Graphics::getUITorques");
+	}
 	for (auto widget : _ui_force_widgets) {
-		if (robot_name == widget->getRobotName()) {
+		if (robot_or_object_name == widget->getRobotOrObjectName()) {
 			return widget->getUIJointTorques();
 		}
 	}
-	return Eigen::VectorXd::Zero(_robot_models[robot_name]->qSize());
+	return is_robot ? Eigen::VectorXd::Zero(
+						  _robot_models[robot_or_object_name]->dof())
+					: Eigen::VectorXd::Zero(6);
 }
 
 const std::vector<std::string> Sai2Graphics::getRobotNames() const {
@@ -326,6 +352,14 @@ const std::vector<std::string> Sai2Graphics::getRobotNames() const {
 		robot_names.push_back(it.first);
 	}
 	return robot_names;
+}
+
+const std::vector<std::string> Sai2Graphics::getObjectNames() const {
+	std::vector<std::string> object_names;
+	for (const auto& it : _object_poses) {
+		object_names.push_back(it.first);
+	}
+	return object_names;
 }
 
 void Sai2Graphics::renderGraphicsWorld() {
@@ -567,6 +601,10 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 
 void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 										const Eigen::Affine3d& object_pose) {
+	if(!objectExistsInGraphicsWorld(object_name)) {
+		throw std::invalid_argument(
+			"object not found in Sai2Graphics::updateObjectGraphics");
+	}
 	cGenericObject* object = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
 		if (object_name == _world->getChild(i)->m_name) {
@@ -584,6 +622,7 @@ void Sai2Graphics::updateObjectGraphics(const std::string& object_name,
 	}
 
 	// update pose
+	*_object_poses.at(object_name) = object_pose;
 	object->setLocalPos(object_pose.translation());
 	object->setLocalRot(object_pose.rotation());
 }
@@ -595,6 +634,14 @@ Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {
 			"robot not found in Sai2Graphics::getRobotJointPos");
 	}
 	return _robot_models[robot_name]->q();
+}
+
+Eigen::Affine3d Sai2Graphics::getObjectPose(const std::string& object_name) {
+	if(!objectExistsInGraphicsWorld(object_name)) {
+		throw std::invalid_argument(
+			"object not found in Sai2Graphics::getObjectPose");
+	}
+	return *_object_poses.at(object_name);
 }
 
 void Sai2Graphics::render(const std::string& camera_name) {

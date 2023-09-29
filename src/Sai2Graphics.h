@@ -96,6 +96,12 @@ public:
 	 */
 	const std::vector<std::string> getRobotNames() const;
 
+	/**
+	 * @brief Get the the names of the objects in the graphics world
+	 * 
+	 * @return vector of object names
+	 */
+	const std::vector<std::string> getObjectNames() const;
 
 	/**
 	 * @brief Update the graphics model for a robot in the virtual world.
@@ -115,6 +121,8 @@ public:
 							  const Eigen::Affine3d& object_pose);
 
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
+
+	Eigen::Affine3d getObjectPose(const std::string& object_name);
 
 	/**
 	* @brief Show frame for a particular link or all links on a robot.
@@ -220,10 +228,12 @@ private:
 	void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame,
 								const double frame_pointer_length);
 
-	bool existsInGraphicsWorld(const std::string& robot_name,
+	bool robotExistsInGraphicsWorld(const std::string& robot_name,
 							   const std::string& link_name = "") const;
 
-	int findForceSensorDisplay(const std::string& robot_name,
+	bool objectExistsInGraphicsWorld(const std::string& object_name) const;
+
+	int findForceSensorDisplay(const std::string& robot_or_object_name,
 							   const std::string& link_name) const;
 
 	/**
@@ -251,6 +261,8 @@ private:
 	 */
 	std::map<std::string, std::string> _robot_filenames;
 	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _object_poses;
 
 	/**
 	 * @brief force sensor displays

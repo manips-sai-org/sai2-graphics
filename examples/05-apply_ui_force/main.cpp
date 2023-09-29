@@ -12,17 +12,21 @@ using namespace std;
 
 const string world_file = "resources/world.urdf";
 const string robot_name = "RBot";
+const string object_name = "Box";
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
 	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file);
-	Eigen::VectorXd q_robot = graphics->getRobotJointPos(robot_name);
+	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
+	Eigen::Affine3d object_pose = graphics->getObjectPose(object_name);
 
 	// set up ui force interaction
 	graphics->addUIForceInteraction(robot_name);
-	Eigen::VectorXd ui_interaction_torques;
+	Eigen::VectorXd ui_interaction_torques_robot;
+	graphics->addUIForceInteraction(object_name);
+	Eigen::VectorXd ui_interaction_torques_object;
 
 	unsigned long long counter = 0;
 
@@ -38,14 +42,29 @@ int main() {
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {
-		// update graphics rendering and window contents
-		graphics->updateRobotGraphics(robot_name, q_robot);
+		// update robot position
+		robot_q << (double)counter / 100.0;
+
+		// update object position
+		object_pose.translation()(1) = -0.4 * sin((double)counter / 100);
+		object_pose.linear() *=
+			AngleAxisd(1.0 / 100.0, Eigen::Vector3d::UnitX())
+				.toRotationMatrix();
+
+		// update graphics robot and object poses in graphics and render
+		graphics->updateRobotGraphics(robot_name, robot_q);
+		graphics->updateObjectGraphics(object_name, object_pose);
+
 		graphics->renderGraphicsWorld();
-		ui_interaction_torques = graphics->getUITorques(robot_name);
+		ui_interaction_torques_robot = graphics->getUITorques(robot_name);
+		ui_interaction_torques_object = graphics->getUITorques(object_name);
 
 		if (counter % 50 == 0) {
-			std::cout << "interaction torques: "
-					  << ui_interaction_torques.transpose() << std::endl;
+			std::cout << "robot interaction torques: "
+					  << ui_interaction_torques_robot.transpose() << std::endl;
+			std::cout << "object interaction torques: "
+					  << ui_interaction_torques_object.transpose() << std::endl;
+			std::cout << std::endl;
 		}
 
 		counter++;
