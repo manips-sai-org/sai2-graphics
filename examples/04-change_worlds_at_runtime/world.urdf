@@ -22,6 +22,42 @@
 	    </visual>
 	</static_object>
 
+	<dynamic_object name="Box1">
+		<origin xyz="0.3 0.3 -1.2" rpy="0 0 0" />
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <mass value="1" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>	
+	    <visual>
+	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+	        <geometry>
+	            <box size="0.2 0.2 0.2" />
+	        </geometry>
+	        <material name="material_gray">
+		        <color rgba="0.6 0.6 0.6 1.0" />
+	        </material>
+	    </visual>
+	</dynamic_object>
+
+	<dynamic_object name="Box2">
+		<origin xyz="0.3 -0.3 -1.2" rpy="0 0 0" />
+        <inertial>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <mass value="1" />
+            <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0" />
+        </inertial>	
+	    <visual>
+	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+	        <geometry>
+	            <box size="0.2 0.2 0.2" />
+	        </geometry>
+	        <material name="material_gray">
+		        <color rgba="0.6 0.6 0.6 1.0" />
+	        </material>
+	    </visual>
+	</dynamic_object>
+
 	<light name="light1" type="directional">
 		<position xyz="2.0 -2.0 2.0" />
 		<lookat xyz="0.0 0.0 0.5" />

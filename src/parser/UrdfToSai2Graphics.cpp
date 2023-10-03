@@ -197,6 +197,7 @@ static void loadVisualtoGenericObject(
 void UrdfToSai2GraphicsWorld(
 	const std::string& filename, chai3d::cWorld* world,
 	std::map<std::string, std::string>& robot_filenames,
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& object_poses,
 	std::vector<std::string>& camera_names, bool verbose) {
 	// load world urdf file
 	ifstream model_file(filename);
@@ -374,17 +375,28 @@ void UrdfToSai2GraphicsWorld(
 		// initialize a cGenericObject to represent this object in the world
 		cGenericObject* object = new cGenericObject();
 		object->m_name = object_ptr->name;
+
+
+		// get translation
+		auto tmp_cvec3 = cVector3d(object_ptr->origin.position.x,
+								   object_ptr->origin.position.y,
+								   object_ptr->origin.position.z);
+		// get rotation
+		auto urdf_q = object_ptr->origin.rotation;
+		// chai3d::cQuaternion tmp_q_chai(urdf_q.w, urdf_q.x, urdf_q.y,
+		// urdf_q.z);
+		Eigen::Quaterniond tmp_q(urdf_q.w, urdf_q.x, urdf_q.y, urdf_q.z);
+		cMatrix3d tmp_cmat3;
+		tmp_cmat3.copyfrom(tmp_q.toRotationMatrix());
+
+		// initial object pose
+		object_poses[object->m_name] = std::make_shared<Eigen::Affine3d>(tmp_q);
+		object_poses.at(object->m_name)->translation() = tmp_cvec3.eigen();
+
 		// set object position and rotation
-		object->setLocalPos(cVector3d(object_ptr->origin.position.x,
-									  object_ptr->origin.position.y,
-									  object_ptr->origin.position.z));
-		{  // brace temp variables to separate scope
-			auto urdf_q = object_ptr->origin.rotation;
-			Quaternion<double> tmp_q(urdf_q.w, urdf_q.x, urdf_q.y, urdf_q.z);
-			cMatrix3d tmp_cmat3;
-			tmp_cmat3.copyfrom(tmp_q.toRotationMatrix());
-			object->setLocalRot(tmp_cmat3);
-		}
+		object->setLocalPos(tmp_cvec3);
+		object->setLocalRot(tmp_cmat3);
+
 		// add to world
 		world->addChild(object);
 

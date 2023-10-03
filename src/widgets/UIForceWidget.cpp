@@ -10,21 +10,45 @@ namespace Sai2Graphics {
 UIForceWidget::UIForceWidget(const std::string& robot_name,
 							 std::shared_ptr<Sai2Model::Sai2Model> robot,
 							 chai3d::cShapeLine* display_line)
-	: _robot_name(robot_name), _robot(robot), _display_line(display_line) {
+	: _robot_or_object_name(robot_name),
+	  _robot(robot),
+	  _display_line(display_line),
+	  _is_robot(true) {
 	_display_line->m_name = "line_ui_force_" + robot_name;
 	_display_line->setShowEnabled(false);
-	// TODO: set default line display properties
 
 	setForceMode();
 
 	// set state to inactive initially
 	_state = Inactive;
 
-	// TODO: update defaults parameters below
-	_max_force = 20;	 // N
-	_lin_spring_k = 20;	 // N/m
-	_max_moment = 2;	 // Nm
-	_rot_spring_k = 2;	 // Nm/Rad
+	_max_force = 50;  // N
+	_max_moment = 5;  // Nm
+
+	setNominalSpringParameters(50, 5, 14, 1);
+}
+
+UIForceWidget::UIForceWidget(
+	const std::string& object_name,
+	std::shared_ptr<Eigen::Affine3d> object_pose,
+	std::shared_ptr<Eigen::Matrix<double, 6, 1>> object_velocity,
+	chai3d::cShapeLine* display_line)
+	: _robot_or_object_name(object_name),
+	  _object_pose(object_pose),
+	  _object_velocity(object_velocity),
+	  _display_line(display_line),
+	  _is_robot(false) {
+	_display_line->m_name = "line_ui_force_" + object_name;
+	_display_line->setShowEnabled(false);
+
+	setForceMode();
+
+	// set state to inactive initially
+	_state = Inactive;
+
+	_max_force = 50;  // N
+	_max_moment = 5;  // Nm
+	setNominalSpringParameters(50, 5, 14, 1);
 }
 
 // enable or disable
@@ -64,7 +88,8 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 		if (fLinkSelected) {
 			_state = Active;
 			_initial_click_point =
-				_robot->positionInWorld(_link_name, _link_local_pos);
+				_is_robot ? _robot->positionInWorld(_link_name, _link_local_pos)
+						  : *_object_pose * _link_local_pos;
 		} else {
 			_state = Disabled;
 			return false;
@@ -74,7 +99,9 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 	if (_state == Active) {
 		// update line point A in global graphics frame
 		Eigen::Vector3d pointA_pos_base;
-		pointA_pos_base = _robot->positionInWorld(_link_name, _link_local_pos);
+		pointA_pos_base =
+			_is_robot ? _robot->positionInWorld(_link_name, _link_local_pos)
+					  : *_object_pose * _link_local_pos;
 		_display_line->m_pointA.set(pointA_pos_base[0], pointA_pos_base[1],
 									pointA_pos_base[2]);
 
@@ -129,16 +156,22 @@ bool UIForceWidget::getRobotLinkInCamera(chai3d::cCamera* camera, int view_x,
 		}
 		auto object_parent = object->getParent();
 		bool f_found_parent_link = false;
+		bool clicked_at_root = true;
 		cTransform transform = object->getLocalTransform();
 		cRobotLink* link;
 		while (object_parent != NULL) {
-			if (_robot_name == object_parent->m_name) {
+			if (_robot_or_object_name == object_parent->m_name) {
+				if (clicked_at_root) {
+					pos = transform * pos;
+					ret_pos << pos.x(), pos.y(), pos.z();
+				}
 				return true;
 			}
 			if (!f_found_parent_link) {
 				// try casting to cRobotLink
 				link = dynamic_cast<cRobotLink*>(object_parent);
 				if (link != NULL) {
+					clicked_at_root = false;
 					f_found_parent_link = true;
 					ret_link_name = link->m_name;
 					// position is with respect to the graphic object. need to
@@ -156,44 +189,65 @@ bool UIForceWidget::getRobotLinkInCamera(chai3d::cCamera* camera, int view_x,
 }
 
 // get interaction force
-Eigen::Vector3d UIForceWidget::getUIForceOrMoment() const {
+Eigen::Vector6d UIForceWidget::getAppliedForceMoment() const {
+	Eigen::Vector6d force_moment = Eigen::Vector6d::Zero();
 	// nothing to do if state is not active
 	if (_state == Disabled || _state == Inactive) {
-		return Eigen::Vector3d::Zero();
+		return force_moment;
 	}
-
-	double stiffness = _force_mode ? _lin_spring_k : _rot_spring_k;
-	double max = _force_mode ? _max_force : _max_moment;
 
 	// calculate spring force in global frame
-	cVector3d temp = _display_line->m_pointB - _display_line->m_pointA;
-	Eigen::Vector3d force_or_moment = temp.eigen();
-	force_or_moment = force_or_moment * stiffness;
+	cVector3d spring_length = _display_line->m_pointB - _display_line->m_pointA;
+	if (_force_mode) {
+		force_moment.head<3>() = spring_length.eigen() * _linear_stiffness;
+	} else {
+		force_moment.tail<3>() = spring_length.eigen() * _rotational_stiffness;
+	}
+
+	Eigen::Vector6d velocity;
+	if (_is_robot) {
+		velocity = _robot->velocity6d(_link_name, _link_local_pos);
+	} else {
+		Eigen::MatrixXd J = Eigen::MatrixXd::Identity(6, 6);
+		J.block<3, 3>(0, 3) = -Sai2Model::crossProductOperator(
+			_object_pose->rotation() * _link_local_pos);
+		velocity = J * *_object_velocity;
+	}
+
+	force_moment.head(3) -= velocity.head(3) * _linear_damping;
+	force_moment.tail(3) -= velocity.tail(3) * _rotational_damping;
 
 	// adjust to keep below max force_or_moment
-	if (force_or_moment.norm() > max) {
-		force_or_moment.normalize();
-		force_or_moment = force_or_moment * max;
+	if (force_moment.head(3).norm() > _max_force) {
+		force_moment.head(3) *= _max_force / force_moment.head(3).norm();
 	}
-	return force_or_moment;
+	if (force_moment.tail(3).norm() > _max_moment) {
+		force_moment.tail(3) *= _max_moment / force_moment.tail(3).norm();
+	}
+
+	return force_moment;
 }
 
 // get interaction joint torques
 Eigen::VectorXd UIForceWidget::getUIJointTorques() const {
 	// nothing to do if state is not active
 	if (_state == Disabled || _state == Inactive) {
-		return Eigen::VectorXd::Zero(_robot->dof());
+		return _is_robot ? Eigen::VectorXd::Zero(_robot->dof())
+						 : Eigen::VectorXd::Zero(6);
 	}
 
-	Eigen::Vector3d force_or_moment = getUIForceOrMoment();
+	Eigen::Vector6d force_moment = getAppliedForceMoment();
 
 	Eigen::MatrixXd J;
-	if (_force_mode) {
-		J = _robot->Jv(_link_name, _link_local_pos);
+	if (_is_robot) {
+		J = _robot->JWorldFrame(_link_name, _link_local_pos);
 	} else {
-		J = _robot->Jw(_link_name);
+		J = Eigen::MatrixXd::Identity(6, 6);
+		J.block<3, 3>(0, 3) = -Sai2Model::crossProductOperator(
+			_object_pose->rotation() * _link_local_pos);
 	}
-	return (J.transpose() * force_or_moment);
+
+	return (J.transpose() * force_moment);
 }
 
 }  // namespace Sai2Graphics
