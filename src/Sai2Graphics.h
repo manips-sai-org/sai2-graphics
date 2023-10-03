@@ -91,14 +91,14 @@ public:
 
 	/**
 	 * @brief Get the the names of the robots in the graphics world
-	 * 
+	 *
 	 * @return vector of robot names
 	 */
 	const std::vector<std::string> getRobotNames() const;
 
 	/**
 	 * @brief Get the the names of the objects in the graphics world
-	 * 
+	 *
 	 * @return vector of object names
 	 */
 	const std::vector<std::string> getObjectNames() const;
@@ -117,8 +117,9 @@ public:
 	 * considered.
 	 * @param object_pose  pose of the object in the world
 	 */
-	void updateObjectGraphics(const std::string& object_name,
-							  const Eigen::Affine3d& object_pose);
+	void updateObjectGraphics(
+		const std::string& object_name, const Eigen::Affine3d& object_pose,
+		const Eigen::Vector6d& object_velocity = Eigen::Vector6d::Zero());
 
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 
@@ -145,7 +146,7 @@ public:
 	 * @param robot_name Link name. If left blank, all link frames are shown.
 	 */
 	void showWireMesh(bool show_wiremesh, const std::string& robot_name,
-							const std::string& link_name = "");
+					  const std::string& link_name = "");
 
 	void setBackgroundColor(const double red, const double green,
 							const double blue) {
@@ -229,7 +230,7 @@ private:
 								const double frame_pointer_length);
 
 	bool robotExistsInGraphicsWorld(const std::string& robot_name,
-							   const std::string& link_name = "") const;
+									const std::string& link_name = "") const;
 
 	bool objectExistsInGraphicsWorld(const std::string& object_name) const;
 
@@ -263,6 +264,7 @@ private:
 	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
 
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _object_poses;
+	std::map<std::string, std::shared_ptr<Eigen::Vector6d>> _object_velocities;
 
 	/**
 	 * @brief force sensor displays
