@@ -109,6 +109,9 @@ public:
 	 * @param joint_angles joint angles for that robot
 	 */
 	void updateRobotGraphics(const std::string& robot_name,
+							 const Eigen::VectorXd& joint_angles,
+							 const Eigen::VectorXd& joint_velocities);
+	void updateRobotGraphics(const std::string& robot_name,
 							 const Eigen::VectorXd& joint_angles);
 
 	/**

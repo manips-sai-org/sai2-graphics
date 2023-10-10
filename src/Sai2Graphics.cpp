@@ -563,19 +563,38 @@ static void updateGraphicsLink(
 // update frame for a particular robot
 void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 									   const Eigen::VectorXd& joint_angles) {
+	auto it = _robot_models.find(robot_name);
+	if (it == _robot_models.end()) {
+		throw std::invalid_argument(
+			"Robot not found in Sai2Graphics::updateRobotGraphics");
+	}
+	updateRobotGraphics(
+		robot_name, joint_angles,
+		Eigen::VectorXd::Zero(_robot_models.at(robot_name)->dof()));
+}
+
+void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
+									   const Eigen::VectorXd& joint_angles,
+									   const Eigen::VectorXd& joint_velocities) {
 	// update corresponfing robot model
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
 		throw std::invalid_argument(
 			"Robot not found in Sai2Graphics::updateRobotGraphics");
 	}
-	auto robot_model = _robot_models[robot_name];
+	auto robot_model = _robot_models.at(robot_name);
 	if (joint_angles.size() != robot_model->qSize()) {
 		throw std::invalid_argument(
 			"size of joint angles inconsistent with robot model in "
 			"Sai2Graphics::updateRobotGraphics");
 	}
+	if (joint_velocities.size() != robot_model->qSize()) {
+		throw std::invalid_argument(
+			"size of joint velocities inconsistent with robot model in "
+			"Sai2Graphics::updateRobotGraphics");
+	}
 	robot_model->setQ(joint_angles);
+	robot_model->setDq(joint_velocities);
 	robot_model->updateKinematics();
 
 	// get robot base object in chai world
