@@ -21,8 +21,23 @@ public:
 				  std::shared_ptr<Sai2Model::Sai2Model> robot,
 				  chai3d::cShapeLine *display_line);
 
+	UIForceWidget(const std::string &object_name,
+				  std::shared_ptr<Eigen::Affine3d> object_pose,
+				  std::shared_ptr<Eigen::Vector6d> object_velocity,
+				  chai3d::cShapeLine *display_line);
+
 	// set state
 	void setEnable(bool enable);
+
+	void setNominalSpringParameters(const double linear_stiffness,
+									const double rotational_stiffness,
+									const double linear_damping,
+									const double rotational_damping) {
+		_linear_stiffness = linear_stiffness;
+		_rotational_stiffness = rotational_stiffness;
+		_linear_damping = linear_damping;
+		_rotational_damping = rotational_damping;
+	}
 
 	// get state
 	UIForceWidgetState getState() const { return _state; }
@@ -35,15 +50,15 @@ public:
 	// setter and getter for the mode (force vs moment)
 	void setForceMode();
 	void setMomentMode();
-	bool isForceMode() const {return _force_mode;}
+	bool isForceMode() const { return _force_mode; }
 
 	// get interaction force/moment
-	Eigen::Vector3d getUIForceOrMoment() const;
+	Eigen::Vector6d getAppliedForceMoment() const;
 
 	// get interaction joint torques
 	Eigen::VectorXd getUIJointTorques() const;
 
-	const std::string getRobotName() { return _robot_name; }
+	const std::string getRobotOrObjectName() { return _robot_or_object_name; }
 
 	// dtor:
 	~UIForceWidget() {}
@@ -74,20 +89,22 @@ private:
 	chai3d::cShapeLine *_display_line;
 
 	// name of robot
-	std::string _robot_name;
+	std::string _robot_or_object_name;
 
 	// robot model this UIForceWidget is associated with
 	std::shared_ptr<Sai2Model::Sai2Model> _robot;
-
-	// handle to graphics interface to query interaction state change
-	// Sai2Graphics* _graphics;
+	std::shared_ptr<Eigen::Affine3d> _object_pose;
+	std::shared_ptr<Eigen::Vector6d> _object_velocity;
+	bool _is_robot;
 
 	// current state of the widget
 	UIForceWidgetState _state;
 
 	// spring constant to use to calculate force/moment
-	double _lin_spring_k;
-	double _rot_spring_k;
+	double _linear_stiffness;
+	double _rotational_stiffness;
+	double _linear_damping;
+	double _rotational_damping;
 
 	// maximum allowable force/moment
 	double _max_force;
