@@ -588,7 +588,7 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 			"size of joint angles inconsistent with robot model in "
 			"Sai2Graphics::updateRobotGraphics");
 	}
-	if (joint_velocities.size() != robot_model->qSize()) {
+	if (joint_velocities.size() != robot_model->dof()) {
 		throw std::invalid_argument(
 			"size of joint velocities inconsistent with robot model in "
 			"Sai2Graphics::updateRobotGraphics");
