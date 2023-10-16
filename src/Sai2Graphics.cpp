@@ -11,6 +11,10 @@
 #include <iostream>
 #include <unordered_map>
 
+#ifdef MACOSX
+#include <filesystem>
+#endif
+
 #include "parser/UrdfToSai2Graphics.h"
 
 using namespace std;
@@ -162,7 +166,13 @@ Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
 						   const std::string& window_name, bool verbose) {
 	// initialize a chai world
 	initializeWorld(path_to_world_file, verbose);
+#ifdef MACOSX
+	auto path = std::__fs::filesystem::current_path();
 	initializeWindow(window_name);
+	std::__fs::filesystem::current_path(path);
+#else
+	initializeWindow(window_name);
+#endif
 }
 
 // dtor
@@ -573,9 +583,9 @@ void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
 		Eigen::VectorXd::Zero(_robot_models.at(robot_name)->dof()));
 }
 
-void Sai2Graphics::updateRobotGraphics(const std::string& robot_name,
-									   const Eigen::VectorXd& joint_angles,
-									   const Eigen::VectorXd& joint_velocities) {
+void Sai2Graphics::updateRobotGraphics(
+	const std::string& robot_name, const Eigen::VectorXd& joint_angles,
+	const Eigen::VectorXd& joint_velocities) {
 	// update corresponfing robot model
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
