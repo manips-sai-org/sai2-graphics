@@ -3,7 +3,11 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
 PROJECT (SAI2-GRAPHICS)
 SET (PROJECT_VERSION 0.1.0) #major version is zero for now since api will certainly change in future
 
-SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include")
+if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
+	SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
+elseif (${CMAKE_SYSTEM_NAME} MATCHES Darwin)
+	SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -I/opt/homebrew/include -fPIC")
+endif ()
 SET(PROJECT_DEFINITIONS ${PROJECT_DEFINITIONS} -DGL_SILENCE_DEPRECATION)
 
 ADD_DEFINITIONS(${PROJECT_DEFINITIONS})
