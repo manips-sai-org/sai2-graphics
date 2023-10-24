@@ -1,12 +1,11 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 
 PROJECT (SAI2-GRAPHICS)
 SET (PROJECT_VERSION 0.1.0) #major version is zero for now since api will certainly change in future
 
-if (${CMAKE_SYSTEM_NAME} MATCHES Linux)
-	SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
-elseif (${CMAKE_SYSTEM_NAME} MATCHES Darwin)
-	SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -I/opt/homebrew/include -fPIC")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
+if (${CMAKE_SYSTEM_NAME} MATCHES Darwin)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
 endif ()
 SET(PROJECT_DEFINITIONS ${PROJECT_DEFINITIONS} -DGL_SILENCE_DEPRECATION)
 
@@ -14,9 +13,9 @@ ADD_DEFINITIONS(${PROJECT_DEFINITIONS})
 
 # set default build to release with debug info. mimic'ed from RBDL project.
 IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-	MESSAGE(STATUS "Setting build type to 'RelWithDebInfo' as none was specified.")
+	MESSAGE(STATUS "Setting build type to 'Release' as none was specified.")
 	# Set the default build, and also the possible values of build type for cmake-gui
-	SET(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
+	SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
 	SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 ENDIF()
 
@@ -83,9 +82,6 @@ ADD_LIBRARY (sai2-graphics STATIC
 	)
 
 SET (SAI2-GRAPHICS_LIBRARIES sai2-graphics 
-	${SAI2-URDF_LIBRARIES}
-	${CHAI3D_LIBRARIES}
-	${SAI2-MODEL_LIBRARIES}
 	${GLFW_LIBRARY}
 	)
 
