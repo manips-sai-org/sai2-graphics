@@ -124,6 +124,8 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods) {
 void mouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
 	if (yoffset != 0) {
 		mouse_scroll_buffer.push_back(yoffset);
+	} else if (xoffset != 0) {
+		mouse_scroll_buffer.push_back(xoffset);
 	}
 }
 
@@ -219,6 +221,7 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 		_object_velocities[object_pose.first] =
 			std::make_shared<Eigen::Vector6d>(Eigen::Vector6d::Zero());
 	}
+	_right_click_interaction_occurring = false;
 }
 
 void Sai2Graphics::clearWorld() {
@@ -322,7 +325,8 @@ int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name,
 }
 
 void Sai2Graphics::addUIForceInteraction(
-	const std::string& robot_or_object_name) {
+	const std::string& robot_or_object_name,
+	const bool interact_at_object_center) {
 	bool is_robot = robotExistsInGraphicsWorld(robot_or_object_name);
 	bool is_object = objectExistsInGraphicsWorld(robot_or_object_name);
 	if (!is_robot && !is_object) {
@@ -338,11 +342,12 @@ void Sai2Graphics::addUIForceInteraction(
 	_world->addChild(display_line);
 	if (is_robot) {
 		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
-			robot_or_object_name, _robot_models[robot_or_object_name],
-			display_line));
+			robot_or_object_name, interact_at_object_center,
+			_robot_models[robot_or_object_name], display_line));
 	} else {
 		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
-			robot_or_object_name, _object_poses[robot_or_object_name],
+			robot_or_object_name, interact_at_object_center,
+			_object_poses[robot_or_object_name],
 			_object_velocities[robot_or_object_name], display_line));
 	}
 }
@@ -401,98 +406,27 @@ void Sai2Graphics::renderGraphicsWorld() {
 	// poll for events
 	glfwPollEvents();
 
-	// handle key presses
+	// handle mouse button presses
 	Eigen::Vector3d camera_pos, camera_lookat_point, camera_up_axis;
 	getCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
 	Vector3d cam_depth_axis = camera_lookat_point - camera_pos;
 	cam_depth_axis.normalize();
 	Vector3d cam_right_axis = cam_depth_axis.cross(camera_up_axis);
 	cam_right_axis.normalize();
-	if (is_pressed(CAMERA_RIGHT_KEY)) {
-		camera_pos += 0.05 * cam_right_axis;
-		camera_lookat_point += 0.05 * cam_right_axis;
-	}
-	if (is_pressed(CAMERA_LEFT_KEY)) {
-		camera_pos -= 0.05 * cam_right_axis;
-		camera_lookat_point -= 0.05 * cam_right_axis;
-	}
-	if (is_pressed(CAMERA_UP_KEY)) {
-		camera_pos += 0.05 * camera_up_axis;
-		camera_lookat_point += 0.05 * camera_up_axis;
-	}
-	if (is_pressed(CAMERA_DOWN_KEY)) {
-		camera_pos -= 0.05 * camera_up_axis;
-		camera_lookat_point -= 0.05 * camera_up_axis;
-	}
-	if (is_pressed(ZOOM_IN_KEY)) {
-		camera_pos += 0.1 * cam_depth_axis;
-		camera_lookat_point += 0.1 * cam_depth_axis;
-	}
-	if (is_pressed(ZOOM_OUT_KEY)) {
-		camera_pos -= 0.1 * cam_depth_axis;
-		camera_lookat_point -= 0.1 * cam_depth_axis;
-	}
 
-	if (consume_first_press(SHOW_CAMERA_POS_KEY)) {
-		cout << endl;
-		cout << "camera position : " << camera_pos.transpose() << endl;
-		cout << "camera lookat point : " << camera_lookat_point.transpose()
-			 << endl;
-		cout << "camera up axis : " << camera_up_axis.transpose() << endl;
-		cout << endl;
-	}
-
-	// handle mouse button presses
-	// 1 - mouse scrolling
-	if (!mouse_scroll_buffer.empty()) {
-		double zoom_offset = mouse_scroll_buffer.front();
-		mouse_scroll_buffer.pop_front();
-		camera_pos += 0.2 * zoom_offset * cam_depth_axis;
-		camera_lookat_point += 0.2 * zoom_offset * cam_depth_axis;
-	}
-
-	// 2 - mouse left button for camera motion
 	double cursorx, cursory;
 	glfwGetCursorPos(_window, &cursorx, &cursory);
 	double mouse_x_increment = (cursorx - _last_cursorx);
 	double mouse_y_increment = (cursory - _last_cursory);
 
-	if (is_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
-		if (is_pressed(GLFW_KEY_LEFT_CONTROL)) {
-			Eigen::Vector3d cam_motion =
-				0.01 * (mouse_x_increment * cam_right_axis -
-						mouse_y_increment * camera_up_axis);
-			camera_pos -= cam_motion;
-			camera_lookat_point -= cam_motion;
-		} else if (is_pressed(GLFW_KEY_LEFT_ALT) ||
-				   is_pressed(GLFW_KEY_LEFT_SHIFT)) {
-			Eigen::Vector3d cam_motion =
-				0.02 * mouse_y_increment * cam_depth_axis;
-			camera_pos -= cam_motion;
-			camera_lookat_point -= cam_motion;
-		} else {
-			Matrix3d m_tilt;
-			m_tilt = AngleAxisd(0.006 * mouse_y_increment, -cam_right_axis);
-			camera_pos = camera_lookat_point +
-						 m_tilt * (camera_pos - camera_lookat_point);
-			Matrix3d m_pan;
-			m_pan = AngleAxisd(0.006 * mouse_x_increment, -camera_up_axis);
-			camera_pos = camera_lookat_point +
-						 m_pan * (camera_pos - camera_lookat_point);
-			camera_up_axis = m_pan * camera_up_axis;
-		}
+	// 0 - scroll event
+	double scroll_value = 0.0;
+	if (!mouse_scroll_buffer.empty()) {
+		scroll_value = mouse_scroll_buffer.front();
+		mouse_scroll_buffer.pop_front();
 	}
-	if (is_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
-		Eigen::Vector3d cam_motion =
-			0.01 * (mouse_x_increment * cam_right_axis -
-					mouse_y_increment * camera_up_axis);
-		camera_pos -= cam_motion;
-		camera_lookat_point -= cam_motion;
-	}
-	setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
-	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
-	// 3 - mouse right button to generate a force/torque
+	// 1 - mouse right button to generate a force/torque
 	if (is_pressed(GLFW_MOUSE_BUTTON_RIGHT)) {
 		if (consume_first_press(GLFW_MOUSE_BUTTON_RIGHT)) {
 			for (auto widget : _ui_force_widgets) {
@@ -503,10 +437,24 @@ void Sai2Graphics::renderGraphicsWorld() {
 		int wwidth_scr, wheight_scr;
 		glfwGetWindowSize(_window, &wwidth_scr, &wheight_scr);
 
-		int viewx = floor(_last_cursorx / wwidth_scr * _window_width);
-		int viewy = floor(_last_cursory / wheight_scr * _window_height);
+		int viewx = floor(cursorx / wwidth_scr * _window_width);
+		int viewy = floor(cursory / wheight_scr * _window_height);
 
 		for (auto widget : _ui_force_widgets) {
+			if (widget->getState() == UIForceWidget::Active) {
+				_right_click_interaction_occurring = true;
+			}
+
+			double depth_change = 0.0;
+			if (_right_click_interaction_occurring) {
+				depth_change = 0.1 * scroll_value;
+				if (is_pressed(ZOOM_IN_KEY)) {
+					depth_change += 0.05;
+				}
+				if (is_pressed(ZOOM_OUT_KEY)) {
+					depth_change -= 0.05;
+				}
+			}
 			if (is_pressed(GLFW_KEY_LEFT_SHIFT)) {
 				widget->setMomentMode();
 			} else {
@@ -514,13 +462,93 @@ void Sai2Graphics::renderGraphicsWorld() {
 			}
 			widget->setInteractionParams(getCamera(camera_name), viewx,
 										 _window_height - viewy, _window_width,
-										 _window_height);
+										 _window_height, depth_change);
 		}
 	} else {
 		for (auto widget : _ui_force_widgets) {
 			widget->setEnable(false);
 		}
+		_right_click_interaction_occurring = false;
 	}
+
+	// 2 - mouse left button for camera motion
+	if (!_right_click_interaction_occurring) {
+		if (is_pressed(GLFW_MOUSE_BUTTON_LEFT)) {
+			if (is_pressed(GLFW_KEY_LEFT_CONTROL)) {
+				Eigen::Vector3d cam_motion =
+					0.01 * (mouse_x_increment * cam_right_axis -
+							mouse_y_increment * camera_up_axis);
+				camera_pos -= cam_motion;
+				camera_lookat_point -= cam_motion;
+			} else if (is_pressed(GLFW_KEY_LEFT_ALT) ||
+					   is_pressed(GLFW_KEY_LEFT_SHIFT)) {
+				Eigen::Vector3d cam_motion =
+					0.02 * mouse_y_increment * cam_depth_axis;
+				camera_pos -= cam_motion;
+				camera_lookat_point -= cam_motion;
+			} else {
+				Matrix3d m_tilt;
+				m_tilt = AngleAxisd(0.006 * mouse_y_increment, -cam_right_axis);
+				camera_pos = camera_lookat_point +
+							 m_tilt * (camera_pos - camera_lookat_point);
+				Matrix3d m_pan;
+				m_pan = AngleAxisd(0.006 * mouse_x_increment, -camera_up_axis);
+				camera_pos = camera_lookat_point +
+							 m_pan * (camera_pos - camera_lookat_point);
+				camera_up_axis = m_pan * camera_up_axis;
+			}
+		}
+		if (is_pressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
+			Eigen::Vector3d cam_motion =
+				0.01 * (mouse_x_increment * cam_right_axis -
+						mouse_y_increment * camera_up_axis);
+			camera_pos -= cam_motion;
+			camera_lookat_point -= cam_motion;
+		}
+
+		// 3 - mouse scrolling for zoom
+		camera_pos += 0.2 * scroll_value * cam_depth_axis;
+		camera_lookat_point += 0.2 * scroll_value * cam_depth_axis;
+
+		// handle keyboard key presses
+		if (is_pressed(CAMERA_RIGHT_KEY)) {
+			camera_pos += 0.05 * cam_right_axis;
+			camera_lookat_point += 0.05 * cam_right_axis;
+		}
+		if (is_pressed(CAMERA_LEFT_KEY)) {
+			camera_pos -= 0.05 * cam_right_axis;
+			camera_lookat_point -= 0.05 * cam_right_axis;
+		}
+		if (is_pressed(CAMERA_UP_KEY)) {
+			camera_pos += 0.05 * camera_up_axis;
+			camera_lookat_point += 0.05 * camera_up_axis;
+		}
+		if (is_pressed(CAMERA_DOWN_KEY)) {
+			camera_pos -= 0.05 * camera_up_axis;
+			camera_lookat_point -= 0.05 * camera_up_axis;
+		}
+		if (is_pressed(ZOOM_IN_KEY)) {
+			camera_pos += 0.1 * cam_depth_axis;
+			camera_lookat_point += 0.1 * cam_depth_axis;
+		}
+		if (is_pressed(ZOOM_OUT_KEY)) {
+			camera_pos -= 0.1 * cam_depth_axis;
+			camera_lookat_point -= 0.1 * cam_depth_axis;
+		}
+
+		if (consume_first_press(SHOW_CAMERA_POS_KEY)) {
+			cout << endl;
+			cout << "camera position : " << camera_pos.transpose() << endl;
+			cout << "camera lookat point : " << camera_lookat_point.transpose()
+				 << endl;
+			cout << "camera up axis : " << camera_up_axis.transpose() << endl;
+			cout << endl;
+		}
+	}
+
+	setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
+	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
+
 	render(camera_name);
 }
 

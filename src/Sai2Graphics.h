@@ -87,7 +87,8 @@ public:
 	 * @param robot_name name of the robot
 	 * @param robot_model model of the robot
 	 */
-	void addUIForceInteraction(const std::string& robot_name);
+	void addUIForceInteraction(const std::string& robot_name,
+							   const bool interact_at_object_center = false);
 
 	/**
 	 * @brief Get the the names of the robots in the graphics world
@@ -257,6 +258,8 @@ private:
 	 *
 	 */
 	std::vector<std::shared_ptr<UIForceWidget>> _ui_force_widgets;
+
+	bool _right_click_interaction_occurring;
 
 	/**
 	 * @brief maps from robot names to filename and from robot names to robot

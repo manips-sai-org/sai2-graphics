@@ -8,46 +8,42 @@ using namespace std;
 namespace Sai2Graphics {
 
 UIForceWidget::UIForceWidget(const std::string& robot_name,
+							 const bool interact_at_object_center,
 							 std::shared_ptr<Sai2Model::Sai2Model> robot,
 							 chai3d::cShapeLine* display_line)
 	: _robot_or_object_name(robot_name),
+	  _interact_at_object_center(interact_at_object_center),
 	  _robot(robot),
 	  _display_line(display_line),
 	  _is_robot(true) {
-	_display_line->m_name = "line_ui_force_" + robot_name;
-	_display_line->setShowEnabled(false);
-
-	setForceMode();
-
-	// set state to inactive initially
-	_state = Inactive;
-
-	_max_force = 50;  // N
-	_max_moment = 5;  // Nm
-
-	setNominalSpringParameters(50, 5, 14, 1);
+	internalInit();
 }
 
 UIForceWidget::UIForceWidget(
-	const std::string& object_name,
+	const std::string& object_name, const bool interact_at_object_center,
 	std::shared_ptr<Eigen::Affine3d> object_pose,
 	std::shared_ptr<Eigen::Matrix<double, 6, 1>> object_velocity,
 	chai3d::cShapeLine* display_line)
 	: _robot_or_object_name(object_name),
+	  _interact_at_object_center(interact_at_object_center),
 	  _object_pose(object_pose),
 	  _object_velocity(object_velocity),
 	  _display_line(display_line),
 	  _is_robot(false) {
-	_display_line->m_name = "line_ui_force_" + object_name;
+	internalInit();
+}
+
+void UIForceWidget::internalInit() {
+	_display_line->m_name = "line_ui_force_" + _robot_or_object_name;
 	_display_line->setShowEnabled(false);
 
-	setForceMode();
-
-	// set state to inactive initially
+	_click_depth = 0.0;
 	_state = Inactive;
 
 	_max_force = 50;  // N
 	_max_moment = 5;  // Nm
+
+	setForceMode();
 	setNominalSpringParameters(50, 5, 14, 1);
 }
 
@@ -79,17 +75,26 @@ void UIForceWidget::setMomentMode() {
 // this updates the internal parameters for calculating the ui interaction force
 bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 										 int viewy, int window_width,
-										 int window_height) {
+										 int window_height,
+										 double depth_change) {
 	// if state is inactive, check if link selection is in progress
 	if (_state == Inactive) {
 		bool fLinkSelected =
 			getRobotLinkInCamera(camera, viewx, viewy, window_width,
 								 window_height, _link_name, _link_local_pos);
+		if (_interact_at_object_center) {
+			_link_local_pos.setZero();
+		}
 		if (fLinkSelected) {
 			_state = Active;
 			_initial_click_point =
 				_is_robot ? _robot->positionInWorld(_link_name, _link_local_pos)
 						  : *_object_pose * _link_local_pos;
+			Eigen::Vector3d camera_pos = camera->getLocalPos().eigen();
+			Eigen::Vector3d cam_to_init_click =
+				_initial_click_point - camera_pos;
+			_click_depth =
+				cam_to_init_click.dot(camera->getLookVector().eigen());
 		} else {
 			_state = Disabled;
 			return false;
@@ -107,7 +112,6 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 
 		// update line point B. Assumes perspective view!
 		// m_fieldViewAngleDeg / 2.0 would correspond to the _top_ of the window
-		// cCamera* camera = _graphics->getCamera(camera_name);
 		double distCam = (window_height / 2.0) /
 						 cTanDeg(camera->getFieldViewAngleDeg() / 2.0);
 
@@ -115,12 +119,18 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 		selectRay << -distCam, (viewx - (window_width / 2.0)),
 			(viewy - (window_height / 2.0));
 
-		// create a point that's at the same axial distance from the camera as
-		// the initial click point Eigen::Vector3d camera_pos, camera_lookat,
-		// camera_vertical; cVector3d pos, vert, lookat;
-		Eigen::Vector3d camera_pos = camera->getLocalPos().eigen();
-		double lookat_dist = (_initial_click_point - camera_pos).norm();
-		selectRay = selectRay * lookat_dist / selectRay.x();
+		// create a point that's at the correctl distance from the camera
+		_click_depth += depth_change;
+		// the field of view is between depths 0 and 10 so keep the click point
+		// within
+		if (_click_depth < 0.5) {
+			_click_depth = 0.5;
+		} else if (_click_depth > 9.5) {
+			_click_depth = 9.5;
+		}
+		// rescale to the correct depth
+		selectRay = selectRay * _click_depth / selectRay.x();
+		// rotate to world frame
 		selectRay = camera->getGlobalRot().eigen() * selectRay;
 		_display_line->m_pointB = camera->getGlobalPos() - cVector3d(selectRay);
 
