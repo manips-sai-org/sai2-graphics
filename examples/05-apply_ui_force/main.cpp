@@ -25,7 +25,7 @@ int main() {
 	// set up ui force interaction
 	graphics->addUIForceInteraction(robot_name);
 	Eigen::VectorXd ui_interaction_torques_robot;
-	graphics->addUIForceInteraction(object_name);
+	graphics->addUIForceInteraction(object_name, true);
 	Eigen::VectorXd ui_interaction_torques_object;
 
 	unsigned long long counter = 0;
@@ -36,8 +36,8 @@ int main() {
 			"applied force (or torque) on the robot, and the corresponding "
 			"torque on the robot joint will be printed to terminal periodically"
 		 << endl;
-	cout << "Righy mouse button: apply a force" << endl;
-	cout << "Righy mouse button + shift: apply a moment" << endl;
+	cout << "Right mouse button: apply a force, scroll or press A or Z to push/pull the object" << endl;
+	cout << "Right mouse button + shift: apply a moment, scroll or press A or Z to to apply a moment in and out of the plane" << endl;
 	cout << endl;
 
 	// while window is open:

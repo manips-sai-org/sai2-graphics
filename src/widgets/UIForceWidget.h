@@ -18,10 +18,12 @@ public:
 public:
 	// ctor
 	UIForceWidget(const std::string &robot_name,
+				  const bool interact_at_object_center,
 				  std::shared_ptr<Sai2Model::Sai2Model> robot,
 				  chai3d::cShapeLine *display_line);
 
 	UIForceWidget(const std::string &object_name,
+				  const bool interact_at_object_center,
 				  std::shared_ptr<Eigen::Affine3d> object_pose,
 				  std::shared_ptr<Eigen::Vector6d> object_velocity,
 				  chai3d::cShapeLine *display_line);
@@ -85,6 +87,8 @@ private:
 							  std::string &ret_link_name,
 							  Eigen::Vector3d &ret_pos);
 
+	void internalInit();
+
 	// a line to be displayed when an interaction force is applied
 	chai3d::cShapeLine *_display_line;
 
@@ -121,6 +125,8 @@ private:
 
 	// initial poisition of the point that was clicked
 	Eigen::Vector3d _initial_click_point;
+
+	bool _interact_at_object_center;
 	double _click_depth;
 };
 

@@ -325,7 +325,8 @@ int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name,
 }
 
 void Sai2Graphics::addUIForceInteraction(
-	const std::string& robot_or_object_name) {
+	const std::string& robot_or_object_name,
+	const bool interact_at_object_center) {
 	bool is_robot = robotExistsInGraphicsWorld(robot_or_object_name);
 	bool is_object = objectExistsInGraphicsWorld(robot_or_object_name);
 	if (!is_robot && !is_object) {
@@ -341,11 +342,12 @@ void Sai2Graphics::addUIForceInteraction(
 	_world->addChild(display_line);
 	if (is_robot) {
 		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
-			robot_or_object_name, _robot_models[robot_or_object_name],
-			display_line));
+			robot_or_object_name, interact_at_object_center,
+			_robot_models[robot_or_object_name], display_line));
 	} else {
 		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
-			robot_or_object_name, _object_poses[robot_or_object_name],
+			robot_or_object_name, interact_at_object_center,
+			_object_poses[robot_or_object_name],
 			_object_velocities[robot_or_object_name], display_line));
 	}
 }
