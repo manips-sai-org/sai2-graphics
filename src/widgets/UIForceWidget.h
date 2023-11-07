@@ -45,7 +45,7 @@ public:
 	// set current window and cursor properties this updates the
 	// internal parameters for calculating the ui interaction force
 	bool setInteractionParams(chai3d::cCamera *camera, int viewx, int viewy,
-							  int window_width, int window_height);
+							  int window_width, int window_height, double depth_change);
 
 	// setter and getter for the mode (force vs moment)
 	void setForceMode();
@@ -121,6 +121,7 @@ private:
 
 	// initial poisition of the point that was clicked
 	Eigen::Vector3d _initial_click_point;
+	double _click_depth;
 };
 
 }  // namespace Sai2Graphics

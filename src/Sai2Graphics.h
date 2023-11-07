@@ -258,6 +258,8 @@ private:
 	 */
 	std::vector<std::shared_ptr<UIForceWidget>> _ui_force_widgets;
 
+	bool _right_click_interaction_occurring;
+
 	/**
 	 * @brief maps from robot names to filename and from robot names to robot
 	 * models
