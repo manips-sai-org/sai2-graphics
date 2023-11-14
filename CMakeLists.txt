@@ -1,112 +1,93 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
+cmake_minimum_required(VERSION 3.10)
 
-PROJECT (SAI2-GRAPHICS)
-SET (PROJECT_VERSION 0.1.0) #major version is zero for now since api will certainly change in future
+project(SAI2-GRAPHICS)
+set(PROJECT_VERSION 0.1.0)
 
-SET(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
-if (${CMAKE_SYSTEM_NAME} MATCHES Darwin)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
-endif ()
-SET(PROJECT_DEFINITIONS ${PROJECT_DEFINITIONS} -DGL_SILENCE_DEPRECATION)
+set(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
+if(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
+endif()
 
-ADD_DEFINITIONS(${PROJECT_DEFINITIONS})
-
-# set default build to release with debug info. mimic'ed from RBDL project.
-IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-	MESSAGE(STATUS "Setting build type to 'Release' as none was specified.")
-	# Set the default build, and also the possible values of build type for cmake-gui
-	SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-	SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-ENDIF()
+# set default build to release
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 # include Chai3d
-# -- this is required by Chai3d to pick the correct path for OpenGL headers
-FIND_PACKAGE(CHAI3D REQUIRED)
-ADD_DEFINITIONS(${CHAI3D_DEFINITIONS})
-if (CMAKE_SYSTEM_NAME MATCHES Darwin) 
-  ADD_DEFINITIONS(-D_MACOSX -DMACOSX)
-elseif (CMAKE_SYSTEM_NAME MATCHES Linux)
-  ADD_DEFINITIONS(-D_LINUX -DLINUX)
-endif () #NOTE: Windows is currently unsupported
-LINK_DIRECTORIES(${CHAI3D_LIBRARY_DIRS})
+find_package(CHAI3D REQUIRED)
+add_definitions(${CHAI3D_DEFINITIONS})
+link_directories(${CHAI3D_LIBRARY_DIRS})
 
 # include Sai2-Model
-FIND_PACKAGE(SAI2-MODEL REQUIRED)
+find_package(SAI2-MODEL REQUIRED)
 
 # include Eigen
-FIND_PACKAGE(Eigen3 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # include sai2-URDF
 find_package(SAI2-URDF REQUIRED)
 
 # include Parser
-SET(PARSER_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/parser)
-SET(PARSER_SOURCE ${PROJECT_SOURCE_DIR}/src/parser/UrdfToSai2Graphics.cpp)
+set(PARSER_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/parser)
+set(PARSER_SOURCE ${PROJECT_SOURCE_DIR}/src/parser/UrdfToSai2Graphics.cpp)
 
-# - glfw3
+# glfw3
 find_package(glfw3 QUIET)
 find_library(GLFW_LIBRARY glfw)
 
 # include Widgets
-SET(WIDGETS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/widgets)
-SET(WIDGETS_SOURCE 
-	${PROJECT_SOURCE_DIR}/src/widgets/UIForceWidget.cpp
-	${PROJECT_SOURCE_DIR}/src/widgets/ForceSensorDisplay.cpp
-)
+set(WIDGETS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/widgets)
+set(WIDGETS_SOURCE ${PROJECT_SOURCE_DIR}/src/widgets/UIForceWidget.cpp
+                   ${PROJECT_SOURCE_DIR}/src/widgets/ForceSensorDisplay.cpp)
 
 # include Graphics
-SET(SAI2-GRAPHICS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
-SET(GRAPHICS_SOURCE 
-	${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
-	${PROJECT_SOURCE_DIR}/src/chai_extension/Capsule.cpp
-	${PROJECT_SOURCE_DIR}/src/chai_extension/CapsuleMesh.cpp
-	${PROJECT_SOURCE_DIR}/src/chai_extension/Pyramid.cpp
-	${PROJECT_SOURCE_DIR}/src/chai_extension/PyramidMesh.cpp
-)
+set(SAI2-GRAPHICS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
+set(GRAPHICS_SOURCE
+    ${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
+    ${PROJECT_SOURCE_DIR}/src/chai_extension/Capsule.cpp
+    ${PROJECT_SOURCE_DIR}/src/chai_extension/CapsuleMesh.cpp
+    ${PROJECT_SOURCE_DIR}/src/chai_extension/Pyramid.cpp
+    ${PROJECT_SOURCE_DIR}/src/chai_extension/PyramidMesh.cpp)
 
 # Add the include directory to the include paths
-INCLUDE_DIRECTORIES (
-	${EIGEN3_INCLUDE_DIRS}
-	${SAI2-GRAPHICS_INCLUDE_DIRS}
-	${SAI2-MODEL_INCLUDE_DIRS}
-	${SAI2-URDF_INCLUDE_DIRS}
-	${CHAI3D_INCLUDE_DIRS}
-	${PARSER_INCLUDE_DIR}
-	${WIDGETS_INCLUDE_DIR}
-	)
+include_directories(
+  ${EIGEN3_INCLUDE_DIRS}
+  ${SAI2-GRAPHICS_INCLUDE_DIRS}
+  ${SAI2-MODEL_INCLUDE_DIRS}
+  ${SAI2-URDF_INCLUDE_DIRS}
+  ${CHAI3D_INCLUDE_DIRS}
+  ${PARSER_INCLUDE_DIR}
+  ${WIDGETS_INCLUDE_DIR})
 
 # Create the library
-ADD_LIBRARY (sai2-graphics STATIC
-	${GRAPHICS_SOURCE}
-	${PARSER_SOURCE}
-	${WIDGETS_SOURCE}
-	)
+add_library(sai2-graphics STATIC ${GRAPHICS_SOURCE} ${PARSER_SOURCE}
+                                 ${WIDGETS_SOURCE})
 
-SET (SAI2-GRAPHICS_LIBRARIES sai2-graphics 
-	${GLFW_LIBRARY}
-	)
+set(SAI2-GRAPHICS_LIBRARIES sai2-graphics ${GLFW_LIBRARY})
 
-# 
+#
 # export package
-# 
+#
 
 # export package for use from the build tree
-EXPORT (TARGETS sai2-graphics FILE ${PROJECT_BINARY_DIR}/SAI2-GRAPHICSTargets.cmake)
-EXPORT (PACKAGE SAI2-GRAPHICS)
+export(TARGETS sai2-graphics
+       FILE ${PROJECT_BINARY_DIR}/SAI2-GRAPHICSTargets.cmake)
+export(PACKAGE SAI2-GRAPHICS)
 
 # configure package
-SET (CONF_INCLUDE_DIRS ${SAI2-GRAPHICS_INCLUDE_DIRS})
-SET (CONF_LIBRARIES ${SAI2-GRAPHICS_LIBRARIES})
-SET (CONF_DEFINITIONS ${PROJECT_DEFINITIONS})
+set(CONF_INCLUDE_DIRS ${SAI2-GRAPHICS_INCLUDE_DIRS})
+set(CONF_LIBRARIES ${SAI2-GRAPHICS_LIBRARIES})
+set(CONF_DEFINITIONS ${PROJECT_DEFINITIONS})
 
 # create package configuration and version files
-CONFIGURE_FILE(SAI2-GRAPHICSConfig.cmake.in "${PROJECT_BINARY_DIR}/SAI2-GRAPHICSConfig.cmake" @ONLY)
-INCLUDE(CMakePackageConfigHelpers)
+configure_file(SAI2-GRAPHICSConfig.cmake.in
+               "${PROJECT_BINARY_DIR}/SAI2-GRAPHICSConfig.cmake" @ONLY)
+include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/SAI2-GRAPHICSConfigVersion.cmake"
   VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion
-)
+  COMPATIBILITY SameMajorVersion)
 
 # add examples
-ADD_SUBDIRECTORY(${PROJECT_SOURCE_DIR}/examples)
+add_subdirectory(${PROJECT_SOURCE_DIR}/examples)

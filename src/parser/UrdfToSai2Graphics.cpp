@@ -362,8 +362,11 @@ void UrdfToSai2GraphicsWorld(
 		// add to world
 		world->addChild(object);
 
-		// load object graphics, must have atleast one
-		assert(object_ptr->visual);
+		// load object graphics
+		if (!object_ptr->visual && verbose) {
+			cout << "Warning: object " << object_ptr->name
+				 << " has no visual element." << endl;
+		}
 		for (const auto visual_ptr : object_ptr->visual_array) {
 			loadVisualtoGenericObject(object, visual_ptr);
 		}
@@ -375,7 +378,6 @@ void UrdfToSai2GraphicsWorld(
 		// initialize a cGenericObject to represent this object in the world
 		cGenericObject* object = new cGenericObject();
 		object->m_name = object_ptr->name;
-
 
 		// get translation
 		auto tmp_cvec3 = cVector3d(object_ptr->origin.position.x,
@@ -400,8 +402,13 @@ void UrdfToSai2GraphicsWorld(
 		// add to world
 		world->addChild(object);
 
-		// load object graphics, must have atleast one
-		assert(object_ptr->visual);
+		// load object graphics
+		if (!object_ptr->visual) {
+			throw std::runtime_error(
+				"Dynamic object " + object_ptr->name +
+				" has no visual element. Dynamic objects must have a visual "
+				"element.");
+		}
 		for (const auto visual_ptr : object_ptr->visual_array) {
 			loadVisualtoGenericObject(object, visual_ptr);
 		}

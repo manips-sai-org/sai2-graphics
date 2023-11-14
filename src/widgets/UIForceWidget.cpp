@@ -5,6 +5,11 @@
 using namespace chai3d;
 using namespace std;
 
+namespace {
+	double min_distance_from_camera = 1e-3;
+	double max_distance_from_camera = 10.0 - 1e-3;
+}
+
 namespace Sai2Graphics {
 
 UIForceWidget::UIForceWidget(const std::string& robot_name,
@@ -123,10 +128,10 @@ bool UIForceWidget::setInteractionParams(chai3d::cCamera* camera, int viewx,
 		_click_depth += depth_change;
 		// the field of view is between depths 0 and 10 so keep the click point
 		// within
-		if (_click_depth < 0.5) {
-			_click_depth = 0.5;
-		} else if (_click_depth > 9.5) {
-			_click_depth = 9.5;
+		if (_click_depth < min_distance_from_camera) {
+			_click_depth = min_distance_from_camera;
+		} else if (_click_depth > max_distance_from_camera) {
+			_click_depth = max_distance_from_camera;
 		}
 		// rescale to the correct depth
 		selectRay = selectRay * _click_depth / selectRay.x();
