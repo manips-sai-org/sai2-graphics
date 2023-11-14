@@ -166,6 +166,10 @@ public:
 	void updateDisplayedForceSensor(
 		const Sai2Model::ForceSensorData& force_data);
 
+	bool isKeyPressed(int key) const {
+		return glfwGetKey(_window, key) == GLFW_PRESS;
+	}
+
 private:
 	void initializeWorld(const std::string& path_to_world_file,
 						 const bool verbose);
