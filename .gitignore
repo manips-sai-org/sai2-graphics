@@ -33,3 +33,6 @@
 
 build/
 bin/
+
+# DS Store files
+*.DS_Store
