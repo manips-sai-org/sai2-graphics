@@ -10,11 +10,11 @@
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
 
-typedef my_shared_ptr<urdf::Link> LinkPtr;
-typedef const my_shared_ptr<const urdf::Link> ConstLinkPtr;
-typedef my_shared_ptr<urdf::Joint> JointPtr;
-typedef my_shared_ptr<urdf::ModelInterface> ModelPtr;
-typedef my_shared_ptr<urdf::World> WorldPtr;
+typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
+typedef const my_shared_ptr<const Sai2Urdfreader::Link> ConstLinkPtr;
+typedef my_shared_ptr<Sai2Urdfreader::Joint> JointPtr;
+typedef my_shared_ptr<Sai2Urdfreader::ModelInterface> ModelPtr;
+typedef my_shared_ptr<Sai2Urdfreader::World> WorldPtr;
 
 #include <Eigen/Core>
 using namespace Eigen;
@@ -55,11 +55,11 @@ static cGenericObject* getGenericObjectChildRecursive(
 	return NULL;
 }
 
-// internal helper function to load a urdf::Visual to a cGenericObject
+// internal helper function to load a Sai2Urdfreader::Visual to a cGenericObject
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 static void loadVisualtoGenericObject(
-	cGenericObject* object, const my_shared_ptr<urdf::Visual>& visual_ptr,
+	cGenericObject* object, const my_shared_ptr<Sai2Urdfreader::Visual>& visual_ptr,
 	const std::string& working_dirname = "./") {
 	// parse material if specified
 	const auto material_ptr = visual_ptr->material;
@@ -72,10 +72,10 @@ static void loadVisualtoGenericObject(
 	const auto geom_type = visual_ptr->geometry->type;
 	auto tmp_mmesh = new cMultiMesh();
 	auto tmp_mesh = new cMesh();
-	if (geom_type == urdf::Geometry::MESH) {
+	if (geom_type == Sai2Urdfreader::Geometry::MESH) {
 		// downcast geometry ptr to mesh type
 		const auto mesh_ptr =
-			dynamic_cast<const urdf::Mesh*>(visual_ptr->geometry.get());
+			dynamic_cast<const Sai2Urdfreader::Mesh*>(visual_ptr->geometry.get());
 		assert(mesh_ptr);
 		// load object
 		if (false == cLoadFileOBJ(tmp_mmesh,
@@ -93,10 +93,10 @@ static void loadVisualtoGenericObject(
 		if (color) {
 			tmp_mmesh->m_material->setColor(*color);
 		}
-	} else if (geom_type == urdf::Geometry::BOX) {
+	} else if (geom_type == Sai2Urdfreader::Geometry::BOX) {
 		// downcast geometry ptr to box type
 		const auto box_ptr =
-			dynamic_cast<const urdf::Box*>(visual_ptr->geometry.get());
+			dynamic_cast<const Sai2Urdfreader::Box*>(visual_ptr->geometry.get());
 		assert(box_ptr);
 		// create chai box mesh
 		cCreateBox(tmp_mesh, box_ptr->dim.x, box_ptr->dim.y, box_ptr->dim.z);
@@ -104,10 +104,10 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == urdf::Geometry::SPHERE) {
+	} else if (geom_type == Sai2Urdfreader::Geometry::SPHERE) {
 		// downcast geometry ptr to sphere type
 		const auto sphere_ptr =
-			dynamic_cast<const urdf::Sphere*>(visual_ptr->geometry.get());
+			dynamic_cast<const Sai2Urdfreader::Sphere*>(visual_ptr->geometry.get());
 		assert(sphere_ptr);
 		// create chai sphere mesh
 		cCreateSphere(tmp_mesh, sphere_ptr->radius);
@@ -115,10 +115,10 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == urdf::Geometry::CYLINDER) {
+	} else if (geom_type == Sai2Urdfreader::Geometry::CYLINDER) {
 		// downcast geometry ptr to cylinder type
 		const auto cylinder_ptr =
-			dynamic_cast<const urdf::Cylinder*>(visual_ptr->geometry.get());
+			dynamic_cast<const Sai2Urdfreader::Cylinder*>(visual_ptr->geometry.get());
 		assert(cylinder_ptr);
 		// create chai sphere mesh
 		chai3d::cCreateCylinder(tmp_mesh, cylinder_ptr->length,
@@ -127,10 +127,10 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == urdf::Geometry::CAPSULE) {
+	} else if (geom_type == Sai2Urdfreader::Geometry::CAPSULE) {
 		// downcast geometry ptr to cylinder type
 		const auto capsule_ptr =
-			dynamic_cast<const urdf::Capsule*>(visual_ptr->geometry.get());
+			dynamic_cast<const Sai2Urdfreader::Capsule*>(visual_ptr->geometry.get());
 		assert(capsule_ptr);
 		if (color) {
 			if (material_ptr && material_ptr->has_color2) {
@@ -160,10 +160,10 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->setUseVertexColors(true, true);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == urdf::Geometry::PYRAMID) {
+	} else if (geom_type == Sai2Urdfreader::Geometry::PYRAMID) {
 		// downcast geometry ptr to pyramid type
 		const auto pyramid_ptr =
-			dynamic_cast<const urdf::Pyramid*>(visual_ptr->geometry.get());
+			dynamic_cast<const Sai2Urdfreader::Pyramid*>(visual_ptr->geometry.get());
 		assert(pyramid_ptr);
 		chai3d::cCreatePyramid(tmp_mesh, pyramid_ptr->num_sides,
 							   pyramid_ptr->base_size, pyramid_ptr->height,
@@ -218,7 +218,7 @@ void UrdfToSai2GraphicsWorld(
 
 	// parse xml to URDF world model
 	assert(world);
-	WorldPtr urdf_world = urdf::parseURDFWorld(model_xml_string);
+	WorldPtr urdf_world = Sai2Urdfreader::parseURDFWorld(model_xml_string);
 	world->m_name = urdf_world->name_;
 	if (verbose) {
 		cout << "UrdfToSai2GraphicsWorld: Starting model conversion to chai "
@@ -438,7 +438,7 @@ void UrdfToSai2GraphicsRobot(const std::string& filename,
 
 	// read and parse xml string to urdf model
 	assert(base);
-	ModelPtr urdf_model = urdf::parseURDF(model_xml_string);
+	ModelPtr urdf_model = Sai2Urdfreader::parseURDF(model_xml_string);
 	base->m_name = urdf_model->getName();
 	if (verbose) {
 		cout << "UrdfToSai2GraphicsRobot: Starting model conversion to chai."
