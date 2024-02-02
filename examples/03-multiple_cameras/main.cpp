@@ -6,7 +6,7 @@
 using namespace std;
 
 const string world_file = "resources/world.urdf";
-const string robot_name = "RBot";
+const string robot_name = "SPHBot";
 const string camera_name = "camera_fixed";
 const string object_name = "Box";
 
@@ -16,6 +16,9 @@ int main() {
 	// load graphics scene
 	auto graphics =
 		new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
+
+	// set transparency
+	graphics->showTransparency(true, robot_name, 0.5);
 
 	unsigned long long counter = 0;
 

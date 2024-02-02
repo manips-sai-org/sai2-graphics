@@ -301,6 +301,9 @@ void UrdfToSai2GraphicsWorld(
 		// TODO: parse from urdf
 		// // set vertical mirrored display mode
 		// camera->setMirrorVertical(false);
+
+		// TODO: parse from urdf
+		camera->setUseMultipassTransparency(true);
 	}
 
 	// parse lights

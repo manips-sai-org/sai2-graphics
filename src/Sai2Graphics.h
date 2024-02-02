@@ -18,6 +18,8 @@
 #include <GLFW/glfw3.h>	 //must be loaded after loading opengl/glew
 // clang-format on
 
+#include <unordered_map>
+
 namespace Sai2Graphics {
 
 class Sai2Graphics {
@@ -125,6 +127,9 @@ public:
 		const std::string& object_name, const Eigen::Affine3d& object_pose,
 		const Eigen::Vector6d& object_velocity = Eigen::Vector6d::Zero());
 
+	void showObjectLinkFrame(bool show_frame, const std::string& object_name,
+							 const double frame_pointer_length = 0.03);
+
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 
 	Eigen::Affine3d getObjectPose(const std::string& object_name);
@@ -152,6 +157,8 @@ public:
 	void showWireMesh(bool show_wiremesh, const std::string& robot_name,
 					  const std::string& link_name = "");
 
+	void showTransparency(bool show_transparency, const std::string& robot_name, const double level);
+
 	void setBackgroundColor(const double red, const double green,
 							const double blue) {
 		_world->setBackgroundColor(red, green, blue);
@@ -169,6 +176,14 @@ public:
 	bool isKeyPressed(int key) const {
 		return glfwGetKey(_window, key) == GLFW_PRESS;
 	}
+
+	// functions related to frame buffer loading and saving
+	void addFrameBuffer(const std::string camera_name,
+						const int width = 1280, const int height = 720);
+	void saveFrameBuffer(const std::string camera_name, 
+						 const std::string fname);
+	void writeFrameBuffer(const std::string camera_name,
+						  const std::string fname);
 
 private:
 	void initializeWorld(const std::string& path_to_world_file,
@@ -299,6 +314,8 @@ private:
 
 	int _window_width;
 	int _window_height;
+
+	std::unordered_map<string, chai3d::cFrameBufferPtr> _frame_buffer;
 };
 
 }  // namespace Sai2Graphics

@@ -694,6 +694,33 @@ void Sai2Graphics::updateObjectGraphics(
 	object->setLocalRot(object_pose.rotation());
 }
 
+void Sai2Graphics::showObjectLinkFrame(bool show_frame, const std::string& object_name, 
+									   const double frame_pointer_length) {
+	if (!objectExistsInGraphicsWorld(object_name)) {
+		throw std::invalid_argument(
+			"object not found in Sai2Graphics::updateObjectGraphics");
+	}
+	cGenericObject* object = NULL;
+	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+		if (object_name == _world->getChild(i)->m_name) {
+			// cast to cRobotBase
+			object = _world->getChild(i);
+			if (object != NULL) {
+				break;
+			}
+		}
+	}
+	if (object == NULL) {
+		// TODO: throw exception
+		cerr << "Could not find object in chai world: " << object_name << endl;
+		abort();
+	}
+
+	// show object frame 
+	object->setFrameSize(frame_pointer_length, false);
+	object->setShowFrame(show_frame, false);
+}
+
 Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
@@ -720,6 +747,34 @@ void Sai2Graphics::render(const std::string& camera_name) {
 	// NOTE: we don't use the display context id right now since chai no longer
 	// supports it in 3.2.0
 	camera->renderView(_window_width, _window_height);
+}
+
+void Sai2Graphics::addFrameBuffer(const std::string camera_name,
+								  const int width,
+								  const int height) {
+	auto camera = getCamera(camera_name);
+	_frame_buffer[camera_name] = chai3d::cFrameBuffer::create();
+	_frame_buffer[camera_name]->setup(camera, width, height, true, false);
+	// _frame_buffer[camera_name]->setSize(width, height);
+}
+
+void Sai2Graphics::saveFrameBuffer(const std::string camera_name,
+								   const std::string fname) {
+	_frame_buffer[camera_name]->renderView();
+	chai3d::cImagePtr image = chai3d::cImage::create();
+	_frame_buffer[camera_name]->copyImageBuffer(image);
+	image->saveToFile(fname);
+}
+
+void Sai2Graphics::writeFrameBuffer(const std::string camera_name,
+								    const std::string fname) {
+	_frame_buffer[camera_name]->renderView();
+	chai3d::cImagePtr image = chai3d::cImage::create();
+	_frame_buffer[camera_name]->copyImageBuffer(image);
+	unsigned char* data = image->getData();  // GL_RGBA
+	std::FILE* fp = std::fopen((fname + ".bin").c_str(), "wb");
+	std::fwrite(data, 4, _frame_buffer[camera_name]->getWidth() * _frame_buffer[camera_name]->getHeight(), fp);
+	std::fclose(fp);
 }
 
 // get current camera pose
@@ -932,6 +987,28 @@ void Sai2Graphics::showWireMesh(bool show_wiremesh,
 		// set wireframe whenever we show frame
 		target_link->setWireMode(show_wiremesh, true);
 	}
+}
+
+void Sai2Graphics::showTransparency(bool show_transparency, const std::string& robot_name, const double level) {
+	// get robot base
+	cRobotBase* base = NULL;
+	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+		if (robot_name == _world->getChild(i)->m_name) {
+			// cast to cRobotBase
+			base = dynamic_cast<cRobotBase*>(_world->getChild(i));
+			if (base != NULL) {
+				break;
+			}
+		}
+	}
+	if (base == NULL) {
+		// TODO: throw exception
+		cerr << "Could not find robot in chai world: " << robot_name
+				<< endl;
+		abort();
+	}
+	base->setTransparencyLevel(level, true, true, true);
+	base->setUseTransparency(true, true);
 }
 
 }  // namespace Sai2Graphics
