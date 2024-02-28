@@ -59,7 +59,8 @@ static cGenericObject* getGenericObjectChildRecursive(
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 static void loadVisualtoGenericObject(
-	cGenericObject* object, const my_shared_ptr<Sai2Urdfreader::Visual>& visual_ptr,
+	cGenericObject* object,
+	const my_shared_ptr<Sai2Urdfreader::Visual>& visual_ptr,
 	const std::string& working_dirname = "./") {
 	// parse material if specified
 	const auto material_ptr = visual_ptr->material;
@@ -74,19 +75,31 @@ static void loadVisualtoGenericObject(
 	auto tmp_mesh = new cMesh();
 	if (geom_type == Sai2Urdfreader::Geometry::MESH) {
 		// downcast geometry ptr to mesh type
-		const auto mesh_ptr =
-			dynamic_cast<const Sai2Urdfreader::Mesh*>(visual_ptr->geometry.get());
+		const auto mesh_ptr = dynamic_cast<const Sai2Urdfreader::Mesh*>(
+			visual_ptr->geometry.get());
 		assert(mesh_ptr);
 		// load object
-		if (false == cLoadFileOBJ(tmp_mmesh,
-								  working_dirname + "/" + mesh_ptr->filename)) {
-			if (false == cLoadFile3DS(tmp_mmesh, working_dirname + "/" +
-													 mesh_ptr->filename)) {
-				cerr << "Couldn't load obj/3ds robot link file: "
-					 << working_dirname + "/" + mesh_ptr->filename << endl;
-				abort();
-			}
+		bool file_load_success = false;
+
+		if (mesh_ptr->filename.substr(mesh_ptr->filename.length() - 4) ==
+			".stl") {
+			file_load_success = cLoadFileSTL(
+				tmp_mmesh, working_dirname + "/" + mesh_ptr->filename);
+		} else if (mesh_ptr->filename.substr(mesh_ptr->filename.length() - 4) ==
+				   ".obj") {
+			file_load_success = cLoadFileOBJ(
+				tmp_mmesh, working_dirname + "/" + mesh_ptr->filename);
+		} else if (mesh_ptr->filename.substr(mesh_ptr->filename.length() - 4) ==
+				   ".3ds") {
+			file_load_success = cLoadFile3DS(
+				tmp_mmesh, working_dirname + "/" + mesh_ptr->filename);
 		}
+		if (!file_load_success) {
+			cerr << "Couldn't load obj/3ds/STL robot link file: "
+				 << working_dirname + "/" + mesh_ptr->filename << endl;
+			abort();
+		}
+
 		// apply scale
 		tmp_mmesh->scaleXYZ(mesh_ptr->scale.x, mesh_ptr->scale.y,
 							mesh_ptr->scale.z);
@@ -95,8 +108,8 @@ static void loadVisualtoGenericObject(
 		}
 	} else if (geom_type == Sai2Urdfreader::Geometry::BOX) {
 		// downcast geometry ptr to box type
-		const auto box_ptr =
-			dynamic_cast<const Sai2Urdfreader::Box*>(visual_ptr->geometry.get());
+		const auto box_ptr = dynamic_cast<const Sai2Urdfreader::Box*>(
+			visual_ptr->geometry.get());
 		assert(box_ptr);
 		// create chai box mesh
 		cCreateBox(tmp_mesh, box_ptr->dim.x, box_ptr->dim.y, box_ptr->dim.z);
@@ -106,8 +119,8 @@ static void loadVisualtoGenericObject(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::SPHERE) {
 		// downcast geometry ptr to sphere type
-		const auto sphere_ptr =
-			dynamic_cast<const Sai2Urdfreader::Sphere*>(visual_ptr->geometry.get());
+		const auto sphere_ptr = dynamic_cast<const Sai2Urdfreader::Sphere*>(
+			visual_ptr->geometry.get());
 		assert(sphere_ptr);
 		// create chai sphere mesh
 		cCreateSphere(tmp_mesh, sphere_ptr->radius);
@@ -117,20 +130,21 @@ static void loadVisualtoGenericObject(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::CYLINDER) {
 		// downcast geometry ptr to cylinder type
-		const auto cylinder_ptr =
-			dynamic_cast<const Sai2Urdfreader::Cylinder*>(visual_ptr->geometry.get());
+		const auto cylinder_ptr = dynamic_cast<const Sai2Urdfreader::Cylinder*>(
+			visual_ptr->geometry.get());
 		assert(cylinder_ptr);
-		// create chai sphere mesh
+		// create chai cylinder mesh
 		chai3d::cCreateCylinder(tmp_mesh, cylinder_ptr->length,
-								cylinder_ptr->radius);
+								cylinder_ptr->radius, 32, 1, 1, true, true,
+								cVector3d(0, 0, -cylinder_ptr->length / 2));
 		if (color) {
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::CAPSULE) {
 		// downcast geometry ptr to cylinder type
-		const auto capsule_ptr =
-			dynamic_cast<const Sai2Urdfreader::Capsule*>(visual_ptr->geometry.get());
+		const auto capsule_ptr = dynamic_cast<const Sai2Urdfreader::Capsule*>(
+			visual_ptr->geometry.get());
 		assert(capsule_ptr);
 		if (color) {
 			if (material_ptr && material_ptr->has_color2) {
@@ -162,8 +176,8 @@ static void loadVisualtoGenericObject(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::PYRAMID) {
 		// downcast geometry ptr to pyramid type
-		const auto pyramid_ptr =
-			dynamic_cast<const Sai2Urdfreader::Pyramid*>(visual_ptr->geometry.get());
+		const auto pyramid_ptr = dynamic_cast<const Sai2Urdfreader::Pyramid*>(
+			visual_ptr->geometry.get());
 		assert(pyramid_ptr);
 		chai3d::cCreatePyramid(tmp_mesh, pyramid_ptr->num_sides,
 							   pyramid_ptr->base_size, pyramid_ptr->height,
