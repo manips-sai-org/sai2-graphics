@@ -874,7 +874,6 @@ void Sai2Graphics::showLinkFrame(bool show_frame, const std::string& robot_name,
 				 << endl;
 			abort();
 		}
-		base->setWireMode(show_frame, true);
 		base->setFrameSize(frame_pointer_length, false);
 		base->setShowFrame(show_frame, false);
 		// get target link
@@ -891,7 +890,6 @@ void Sai2Graphics::showLinkFrame(bool show_frame, const std::string& robot_name,
 	} else {
 		auto target_link = findLink(robot_name, link_name);
 		// set wireframe whenever we show frame
-		target_link->setWireMode(show_frame, true);
 		target_link->setFrameSize(frame_pointer_length, false);
 		target_link->setShowFrame(show_frame, false);
 	}
