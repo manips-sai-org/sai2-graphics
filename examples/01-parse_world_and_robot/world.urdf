@@ -4,7 +4,7 @@
 
 	<robot name="RBot">
 		<!-- model node is required -->
-		<model dir="resources" path="rbot.urdf" name="RBot_description" />
+		<model dir="${SAI2_MODEL_URDF_FOLDER}/simple_models" path="simple_pendulum.urdf" name="simple_pendulum" />
 		<!-- origin node is optional -->
 		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 	</robot>
@@ -24,7 +24,5 @@
 		<vertical xyz="0.0 0.0 1.0" />
 		<lookat xyz="0.0 0.0 -0.5" />
 	</camera>
-
-	<!-- TODO: support stereo specification -->
 
 </world>
