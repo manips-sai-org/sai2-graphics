@@ -5,9 +5,11 @@
 
 using namespace std;
 
-const string world_file_1 = "resources/world.urdf";
-const string world_file_2 = "resources/world2.urdf";
-const string robot_name_1 = "RBot";
+const string world_file_1 =
+	string(EXAMPLES_FOLDER) + "/04-change_worlds_at_runtime/world1.urdf";
+const string world_file_2 =
+	string(EXAMPLES_FOLDER) + "/04-change_worlds_at_runtime/world2.urdf";
+const string robot_name_1 = "RBot1";
 const string robot_name_2 = "RBot2";
 
 int main() {

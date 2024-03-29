@@ -9,9 +9,12 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/06-force_sensor_display/world.urdf";
 
 int main() {
+	Sai2Model::URDF_FOLDERS["EXAMPLE_06_FOLDER"] =
+		string(EXAMPLES_FOLDER) + "/06-force_sensor_display";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene

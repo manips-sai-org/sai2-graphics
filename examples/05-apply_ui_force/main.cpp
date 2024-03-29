@@ -10,7 +10,8 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/05-apply_ui_force/world.urdf";
 const string robot_name = "RBot";
 const string object_name = "Box";
 
@@ -36,8 +37,12 @@ int main() {
 			"applied force (or torque) on the robot, and the corresponding "
 			"torque on the robot joint will be printed to terminal periodically"
 		 << endl;
-	cout << "Right mouse button: apply a force, scroll or press A or Z to push/pull the object" << endl;
-	cout << "Right mouse button + shift: apply a moment, scroll or press A or Z to to apply a moment in and out of the plane" << endl;
+	cout << "Right mouse button: apply a force, scroll or press A or Z to "
+			"push/pull the object"
+		 << endl;
+	cout << "Right mouse button + shift: apply a moment, scroll or press A or "
+			"Z to to apply a moment in and out of the plane"
+		 << endl;
 	cout << endl;
 
 	// while window is open:

@@ -5,12 +5,15 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/03-multiple_cameras/world.urdf";
 const string robot_name = "RBot";
 const string camera_name = "camera_fixed";
 const string object_name = "Box";
 
 int main() {
+	Sai2Model::URDF_FOLDERS["EXAMPLE_03_FOLDER"] =
+		string(EXAMPLES_FOLDER) + "/03-multiple_cameras";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene

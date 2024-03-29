@@ -9,6 +9,7 @@
 
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
+#include "parser/Sai2ModelParserUtils.h"
 
 typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
 typedef const my_shared_ptr<const Sai2Urdfreader::Link> ConstLinkPtr;
@@ -214,9 +215,10 @@ void UrdfToSai2GraphicsWorld(
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& object_poses,
 	std::vector<std::string>& camera_names, bool verbose) {
 	// load world urdf file
-	ifstream model_file(filename);
+	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
+	ifstream model_file(resolved_filename);
 	if (!model_file) {
-		cerr << "Error opening file '" << filename << "'." << endl;
+		cerr << "Error opening file '" << resolved_filename << "'." << endl;
 		abort();
 	}
 
@@ -262,8 +264,9 @@ void UrdfToSai2GraphicsWorld(
 		world->addChild(robot);
 
 		// load robot from file
-		UrdfToSai2GraphicsRobot(robot_spec->model_filename, robot, verbose,
-								robot_spec->model_working_dir);
+		UrdfToSai2GraphicsRobot(
+			robot_spec->model_filename, robot, verbose,
+			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
 		assert(robot->m_name == robot_spec->model_name);
 
 		// overwrite robot name with custom name for this instance
@@ -276,7 +279,8 @@ void UrdfToSai2GraphicsWorld(
 				"Different robots cannot have the same name in the world");
 		}
 		robot_filenames[robot->m_name] =
-			robot_spec->model_working_dir + "/" + robot_spec->model_filename;
+			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
+			"/" + robot_spec->model_filename;
 	}
 
 	// parse cameras
