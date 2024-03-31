@@ -31,10 +31,12 @@ public:
 	 * virtual world (urdf and yml files supported).
 	 * @param verbose To display information about the robot model creation in
 	 * the terminal or not.
+	 * @param headless To create a display window or not (true if using MultiWorldView)
 	 */
 	Sai2Graphics(const std::string& path_to_world_file,
 				 const std::string& window_name = "sai2 world",
-				 bool verbose = false);
+				 bool verbose = false,
+				 bool headless = false);
 
 	// dtor
 	~Sai2Graphics();
@@ -159,6 +161,8 @@ public:
 
 	void showTransparency(bool show_transparency, const std::string& robot_name, const double level);
 
+	void showObjectTransparency(bool show_transparency, const std::string& object_name, const double level);
+
 	void setBackgroundColor(const double red, const double green,
 							const double blue) {
 		_world->setBackgroundColor(red, green, blue);
@@ -185,10 +189,18 @@ public:
 	void writeFrameBuffer(const std::string camera_name,
 						  const std::string fname);
 
+	/**
+	 * @brief Get pointer to Chai camera object.
+	 * @param camera_name Camera name.
+	 */
+	chai3d::cCamera* getCamera(const std::string& camera_name);
+
+	void clearWorld();
+
 private:
 	void initializeWorld(const std::string& path_to_world_file,
 						 const bool verbose);
-	void clearWorld();
+	// void clearWorld();
 
 	/**
 	 * @brief initialize the glfw window with the given window name
@@ -234,11 +246,11 @@ private:
 					   const Eigen::Vector3d& lookat);
 
 	/* CHAI specific interface */
-	/**
-	 * @brief Get pointer to Chai camera object.
-	 * @param camera_name Camera name.
-	 */
-	chai3d::cCamera* getCamera(const std::string& camera_name);
+	// /**
+	//  * @brief Get pointer to Chai camera object.
+	//  * @param camera_name Camera name.
+	//  */
+	// chai3d::cCamera* getCamera(const std::string& camera_name);
 
 	/**
 	 * internal functions to find link
@@ -315,7 +327,12 @@ private:
 	int _window_width;
 	int _window_height;
 
+	/**
+	 * @brief used to store frame buffers for recording
+	 * 
+	 */
 	std::unordered_map<string, chai3d::cFrameBufferPtr> _frame_buffer;
+
 };
 
 }  // namespace Sai2Graphics

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(SAI2-GRAPHICS)
 set(PROJECT_VERSION 0.1.0)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
+set(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC -O2")
 if(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include -w")
 endif()
@@ -45,6 +45,7 @@ set(WIDGETS_SOURCE ${PROJECT_SOURCE_DIR}/src/widgets/UIForceWidget.cpp
 set(SAI2-GRAPHICS_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
 set(GRAPHICS_SOURCE
     ${PROJECT_SOURCE_DIR}/src/Sai2Graphics.cpp
+    ${PROJECT_SOURCE_DIR}/src/graphics_extension/MultiWorldView.cpp
     ${PROJECT_SOURCE_DIR}/src/chai_extension/Capsule.cpp
     ${PROJECT_SOURCE_DIR}/src/chai_extension/CapsuleMesh.cpp
     ${PROJECT_SOURCE_DIR}/src/chai_extension/Pyramid.cpp

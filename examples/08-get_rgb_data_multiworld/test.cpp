@@ -12,10 +12,13 @@
 #include "Sai2Graphics.h"
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 
 const std::string fname = "image1.bin";
 
 int main() {
+
+    std::remove("verification.png");
 
     // create image to process individual frames
     // int width = 1280;

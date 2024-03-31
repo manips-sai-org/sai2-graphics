@@ -165,16 +165,21 @@ GLFWwindow* glfwInitialize(const std::string& window_name) {
 namespace Sai2Graphics {
 
 Sai2Graphics::Sai2Graphics(const std::string& path_to_world_file,
-						   const std::string& window_name, bool verbose) {
+						   const std::string& window_name, 
+						   bool verbose, 
+						   bool headless) {
 	// initialize a chai world
 	initializeWorld(path_to_world_file, verbose);
-#ifdef MACOSX
-	auto path = std::__fs::filesystem::current_path();
-	initializeWindow(window_name);
-	std::__fs::filesystem::current_path(path);
-#else
-	initializeWindow(window_name);
-#endif
+
+	if (!headless) {
+	#ifdef MACOSX
+		auto path = std::__fs::filesystem::current_path();
+		initializeWindow(window_name);
+		std::__fs::filesystem::current_path(path);
+	#else
+		initializeWindow(window_name);
+	#endif
+	} 
 }
 
 // dtor
@@ -387,6 +392,7 @@ const std::vector<std::string> Sai2Graphics::getObjectNames() const {
 }
 
 void Sai2Graphics::renderGraphicsWorld() {
+
 	// swap camera if needed
 	if (consume_first_press(NEXT_CAMERA_KEY)) {
 		_current_camera_index =
@@ -461,8 +467,8 @@ void Sai2Graphics::renderGraphicsWorld() {
 				widget->setForceMode();
 			}
 			widget->setInteractionParams(getCamera(camera_name), viewx,
-										 _window_height - viewy, _window_width,
-										 _window_height, depth_change);
+										_window_height - viewy, _window_width,
+										_window_height, depth_change);
 		}
 	} else {
 		for (auto widget : _ui_force_widgets) {
@@ -481,7 +487,7 @@ void Sai2Graphics::renderGraphicsWorld() {
 				camera_pos -= cam_motion;
 				camera_lookat_point -= cam_motion;
 			} else if (is_pressed(GLFW_KEY_LEFT_ALT) ||
-					   is_pressed(GLFW_KEY_LEFT_SHIFT)) {
+					is_pressed(GLFW_KEY_LEFT_SHIFT)) {
 				Eigen::Vector3d cam_motion =
 					0.02 * mouse_y_increment * cam_depth_axis;
 				camera_pos -= cam_motion;
@@ -490,11 +496,11 @@ void Sai2Graphics::renderGraphicsWorld() {
 				Matrix3d m_tilt;
 				m_tilt = AngleAxisd(0.006 * mouse_y_increment, -cam_right_axis);
 				camera_pos = camera_lookat_point +
-							 m_tilt * (camera_pos - camera_lookat_point);
+							m_tilt * (camera_pos - camera_lookat_point);
 				Matrix3d m_pan;
 				m_pan = AngleAxisd(0.006 * mouse_x_increment, -camera_up_axis);
 				camera_pos = camera_lookat_point +
-							 m_pan * (camera_pos - camera_lookat_point);
+							m_pan * (camera_pos - camera_lookat_point);
 				camera_up_axis = m_pan * camera_up_axis;
 			}
 		}
@@ -540,7 +546,7 @@ void Sai2Graphics::renderGraphicsWorld() {
 			cout << endl;
 			cout << "camera position : " << camera_pos.transpose() << endl;
 			cout << "camera lookat point : " << camera_lookat_point.transpose()
-				 << endl;
+				<< endl;
 			cout << "camera up axis : " << camera_up_axis.transpose() << endl;
 			cout << endl;
 		}
@@ -754,7 +760,7 @@ void Sai2Graphics::addFrameBuffer(const std::string camera_name,
 								  const int height) {
 	auto camera = getCamera(camera_name);
 	_frame_buffer[camera_name] = chai3d::cFrameBuffer::create();
-	_frame_buffer[camera_name]->setup(camera, width, height, true, false);
+	_frame_buffer[camera_name]->setup(camera, width, height, true, true);
 	// _frame_buffer[camera_name]->setSize(width, height);
 }
 
@@ -1009,6 +1015,32 @@ void Sai2Graphics::showTransparency(bool show_transparency, const std::string& r
 	}
 	base->setTransparencyLevel(level, true, true, true);
 	base->setUseTransparency(true, true);
+}
+
+void Sai2Graphics::showObjectTransparency(bool show_transparency, const std::string& object_name, const double level) {
+	if (!objectExistsInGraphicsWorld(object_name)) {
+		throw std::invalid_argument(
+			"object not found in Sai2Graphics::updateObjectGraphics");
+	}
+	cGenericObject* object = NULL;
+	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
+		if (object_name == _world->getChild(i)->m_name) {
+			// cast to cRobotBase
+			object = _world->getChild(i);
+			if (object != NULL) {
+				break;
+			}
+		}
+	}
+	if (object == NULL) {
+		// TODO: throw exception
+		cerr << "Could not find object in chai world: " << object_name << endl;
+		abort();
+	}
+
+	// show object frame 
+	object->setTransparencyLevel(level, true, true, true);
+	object->setUseTransparency(true, true);
 }
 
 }  // namespace Sai2Graphics
