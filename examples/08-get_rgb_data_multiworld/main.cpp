@@ -30,7 +30,7 @@ int main() {
 	// load graphics scene
 	std::vector<std::string> world_file_vec {world_file, world_file};
 	std::vector<std::string> camera_name_vec {"camera1", "camera2"};
-	auto multi_graphics = std::make_shared<Sai2Graphics::MultiWorldView>(world_file_vec, camera_name_vec, "sai2 multi-world");
+	auto multi_graphics = std::make_shared<Sai2Graphics::MultiWorldView>(world_file_vec, camera_name_vec, false, "sai2 multi-world");
 
 	// add camera frame buffers for recording 
 	multi_graphics->getGraphics(0)->addFrameBuffer("camera1", 96, 96);

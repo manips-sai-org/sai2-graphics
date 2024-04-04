@@ -68,6 +68,15 @@ public:
 	void renderGraphicsWorld();
 
 	/**
+	 * @brief sets the glfw window pointer 
+	 * 
+	 * @param window 
+	 */
+	void setWindow(GLFWwindow* window) {
+		_window = window;
+	}
+
+	/**
 	 * @brief remove all interactions widgets
 	 * after calling that function, right clicking on the window won't
 	 * display lines and generate forces/joint torques
@@ -196,6 +205,9 @@ public:
 	chai3d::cCamera* getCamera(const std::string& camera_name);
 
 	void clearWorld();
+
+	int getWindowWidth() { return _window_width; }
+	int getWindowHeight() { return _window_height; }
 
 private:
 	void initializeWorld(const std::string& path_to_world_file,

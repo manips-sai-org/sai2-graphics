@@ -20,12 +20,15 @@ class MultiWorldView {
 public:
     MultiWorldView(const std::vector<std::string>& path_to_world_file,
                    const std::vector<std::string>& camera_names,
+                   const bool side_by_side = false,
                    const std::string& window_name = "sai2 multi-world",
                    const bool verbose = false);
 
     // dtor
     ~MultiWorldView() {
-        glfwDestroyWindow(_window);
+        for (auto window : _window) {
+            glfwDestroyWindow(window);
+        }
         glfwTerminate();
         for (int i = 0; i < _graphics.size(); ++i) {
             _graphics[i]->clearWorld();
@@ -40,22 +43,28 @@ public:
         return _graphics[ind];
     }
 
-    bool isWindowOpen() { return !glfwWindowShouldClose(_window); }
+    bool isWindowOpen() { 
+        if (_side_by_side) {
+            return !glfwWindowShouldClose(_window[0]);
+        } else {
+            return (!glfwWindowShouldClose(_window[0]) && !glfwWindowShouldClose(_window[1])); 
+        }
+    }
 
 private:
-    GLFWwindow* _window;
+    std::vector<GLFWwindow*> _window;  // multiple window viewing 
     std::vector<std::shared_ptr<Sai2Graphics>> _graphics;
     std::vector<std::string> _camera_names;
     std::vector<std::string> _path_to_world_file;
 
-    /**
-	 * @brief used to perform side-by-side rendering 
-	 * 
-	 */
+    // multi-world rendering 
 	chai3d::cCamera* _camera_main;
+	chai3d::cCamera* _camera_primary;
+	chai3d::cCamera* _camera_secondary;
 	std::vector<chai3d::cViewPanel*> _view_panels;
 	std::vector<chai3d::cFrameBufferPtr> _panel_frame_buffer;
     int _window_width, _window_height;
+    bool _side_by_side;
 };
 
 }  // namespace

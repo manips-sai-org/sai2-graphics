@@ -145,10 +145,10 @@ GLFWwindow* glfwInitialize(const std::string& window_name) {
 	// information about computer screen and GLUT display window
 	int screenW = mode->width;
 	int screenH = mode->height;
-	// int windowW = 0.8 * screenH;
-	// int windowH = 0.5 * screenH;
-    int windowW = 0.9 * screenW;
-	int windowH = 0.9 * screenH;
+	int windowW = 0.8 * screenH;
+	int windowH = 0.5 * screenH;
+    // int windowW = 0.9 * screenW;
+	// int windowH = 0.9 * screenH;
 	int windowPosY = (screenH - windowH) / 2;
 	int windowPosX = windowPosY;
 
@@ -169,9 +169,10 @@ namespace Sai2Graphics {
 
 MultiWorldView::MultiWorldView(const std::vector<std::string>& path_to_world_file,
                                const std::vector<std::string>& camera_names,
+							   const bool side_by_side,
                                const std::string& window_name,
                                const bool verbose) : _path_to_world_file(path_to_world_file), 
-                               _camera_names(camera_names) 
+                               _camera_names(camera_names), _side_by_side(side_by_side)
 {
     for (auto path : path_to_world_file) {
         _graphics.push_back(std::make_shared<Sai2Graphics>(path, window_name, verbose, true));
@@ -179,31 +180,54 @@ MultiWorldView::MultiWorldView(const std::vector<std::string>& path_to_world_fil
 
     // setup view panels and attach to one camera from each world (supports only 2 for now)
     _camera_main = new chai3d::cCamera(NULL);
+    _camera_primary = new chai3d::cCamera(NULL);
+    _camera_secondary = new chai3d::cCamera(NULL);
     for (int i = 0; i < 2; ++i) {
         _panel_frame_buffer.push_back(chai3d::cFrameBuffer::create());
         // todo: check camera names are valid
         _panel_frame_buffer[i]->setup(_graphics[i]->getCamera(_camera_names[i]));
         _view_panels.push_back(new chai3d::cViewPanel(_panel_frame_buffer[i]));
-        _camera_main->m_frontLayer->addChild(_view_panels[i]);
+		if (_side_by_side) {
+        	_camera_main->m_frontLayer->addChild(_view_panels[i]);
+		} else {
+			if (i == 0) {        
+				_camera_primary->m_frontLayer->addChild(_view_panels[i]);
+			} else {
+				_camera_secondary->m_frontLayer->addChild(_view_panels[i]);
+			}
+		}
     }
 
-    #ifdef MACOSX
-		auto path = std::__fs::filesystem::current_path();
-		initializeWindow(window_name);
-		std::__fs::filesystem::current_path(path);
-	#else
-		initializeWindow(window_name);
-	#endif
+	if (!_side_by_side) {
+		for (int i = 0; i < 2; ++i) {
+			#ifdef MACOSX
+				auto path = std::__fs::filesystem::current_path();
+				initializeWindow(window_name);
+				std::__fs::filesystem::current_path(path);
+			#else
+				initializeWindow(window_name);
+			#endif
+			_graphics[i]->setWindow(_window[i]);
+		}
+	} else {
+		#ifdef MACOSX
+			auto path = std::__fs::filesystem::current_path();
+			initializeWindow(window_name);
+			std::__fs::filesystem::current_path(path);
+		#else
+			initializeWindow(window_name);
+		#endif
+	}
 
 }
 
 void MultiWorldView::initializeWindow(const std::string& window_name) {
-	_window = glfwInitialize(window_name);
+	_window.push_back(glfwInitialize(window_name));
 
 	// set callbacks
-	glfwSetKeyCallback(_window, keySelect);
-	glfwSetMouseButtonCallback(_window, mouseClick);
-	glfwSetScrollCallback(_window, mouseScroll);
+	glfwSetKeyCallback(_window[_window.size() - 1], keySelect);
+	glfwSetMouseButtonCallback(_window[_window.size() - 1], mouseClick);
+	glfwSetScrollCallback(_window[_window.size() - 1], mouseScroll);
 }
 
 void MultiWorldView::resetWorld(const bool verbose) {
@@ -213,50 +237,105 @@ void MultiWorldView::resetWorld(const bool verbose) {
 
     // clear previous setup
     _camera_main = NULL;
+	_camera_primary = NULL; 
+	_camera_secondary = NULL; 
     _panel_frame_buffer.clear();
     _view_panels.clear();
 
     // setup frame buffers
     _camera_main = new chai3d::cCamera(NULL);
+	_camera_primary = new chai3d::cCamera(NULL);
+	_camera_secondary = new chai3d::cCamera(NULL);
     for (int i = 0; i < 2; ++i) {
         _panel_frame_buffer.push_back(chai3d::cFrameBuffer::create());
         // todo: check camera names are valid
         _panel_frame_buffer[i]->setup(_graphics[i]->getCamera(_camera_names[i]));
         _view_panels.push_back(new chai3d::cViewPanel(_panel_frame_buffer[i]));
-        _camera_main->m_frontLayer->addChild(_view_panels[i]);
+		if (_side_by_side) {
+        	_camera_main->m_frontLayer->addChild(_view_panels[i]);
+		} else {
+			if (i == 0) {
+				_camera_primary->m_frontLayer->addChild(_view_panels[i]);
+			} else {
+				_camera_secondary->m_frontLayer->addChild(_view_panels[i]);
+			}
+		}
     }
 }
 
 void MultiWorldView::renderGraphicsWorld() {
-    // update graphics. this automatically waits for the correct amount of time
-    glfwGetFramebufferSize(_window, &_window_width, &_window_height);
-    glfwSwapBuffers(_window);
-    glFinish();
 
-    // poll for events
-    glfwPollEvents();
+	if (!_side_by_side) {
+		for (int i = 0; i < 2; ++i) {
+			glfwMakeContextCurrent(_window[i]);
+			if (i == 0) {
+				glfwSetWindowPos(_window[i], 0, _graphics[i]->getWindowHeight()/4);
+			} else {
+				glfwSetWindowPos(_window[i], _graphics[i]->getWindowWidth()/2, _graphics[i]->getWindowHeight()/4);
+			}
+			_graphics[i]->renderGraphicsWorld();
+		}
+	
 
-    // setup frame buffer window sizes (supports only 2 at this point)
-    int halfW = _window_width / 2;
-    int halfH = _window_height / 2;
-    int offset = 1;
+	// for (int i = 0; i < 2; ++i) {
+	// 	if (_side_by_side && i == 1) { continue; }
+	// 	// update graphics. this automatically waits for the correct amount of time
+	// 	glfwMakeContextCurrent(_window[i]);
+	// 	glfwGetFramebufferSize(_window[i], &_window_width, &_window_height);
+	// 	glfwSwapBuffers(_window[i]);
+	// 	if (!_side_by_side) {
+	// 		// set window position
+	// 		if (i == 0) {
+	// 			glfwSetWindowPos(_window[i], 0, _window_height/4);
+	// 		} else if (i == 1) {
+	// 			glfwSetWindowPos(_window[i], _window_width/2, _window_height/4);
+	// 		}
+	// 	}
 
-    // update display panel sizes and positions
-    _view_panels[0]->setLocalPos(0.0, 0.0);
-    _view_panels[0]->setSize(halfW, _window_height);
+	// 	glFinish();
 
-    _view_panels[1]->setLocalPos(halfW+offset, 0.0);
-    _view_panels[1]->setSize(halfW, _window_height);
+	// 	// poll for events
+	// 	glfwPollEvents();
 
-    // update frame buffer sizes
-    _panel_frame_buffer[0]->setSize(halfW, _window_height);
-    _panel_frame_buffer[1]->setSize(halfW, _window_height);
+	// 	// multi-window render
+	// 	if (!_side_by_side) {
+	// 		// _view_panels[i]->setLocalPos(0.0, 0.0);
+	// 		// _view_panels[i]->setSize(_window_width, _window_height);
+	// 		// _panel_frame_buffer[i]->setSize(_window_width, _window_height);
+	// 		// _panel_frame_buffer[i]->renderView();
+	// 		_graphics[i]->renderGraphicsWorld();
+	// 		// if (i == 0) {
+	// 		// 	_camera_primary->renderView(_window_width, _window_height);
+	// 		// } else {
+	// 		// 	_camera_secondary->renderView(_window_width, _window_height);
+	// 		// }
+	// 	}
+	// }
 
-    // render frame buffers
-    _panel_frame_buffer[0]->renderView();
-    _panel_frame_buffer[1]->renderView();
+	// side-by-side setup
+	} else {
+		// setup frame buffer window sizes (supports only 2 at this point)
+		int halfW = _window_width / 2;
+		int halfH = _window_height / 2;
+		int offset = 1;
 
-    _camera_main->renderView(_window_width, _window_height);
+		// update display panel sizes and positions
+		_view_panels[0]->setLocalPos(0.0, 0.0);
+		_view_panels[0]->setSize(halfW, _window_height);
+
+		_view_panels[1]->setLocalPos(halfW+offset, 0.0);
+		_view_panels[1]->setSize(halfW, _window_height);
+
+		// update frame buffer sizes
+		_panel_frame_buffer[0]->setSize(halfW, _window_height);
+		_panel_frame_buffer[1]->setSize(halfW, _window_height);
+
+		// render frame buffers
+		_panel_frame_buffer[0]->renderView();
+		_panel_frame_buffer[1]->renderView();
+
+		_camera_main->renderView(_window_width, _window_height);
+	}
 }
 
 }  // namespace 
