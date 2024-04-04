@@ -8,7 +8,8 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/01-parse_world_and_robot/world.urdf";
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;

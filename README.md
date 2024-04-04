@@ -18,3 +18,6 @@ Go to the build/examples/one_of_the_examples folder and run the example. For exa
 cd build/examples/01-parse_world_and_robot
 ./01-parse_world_and_robot
 ```
+
+## License
+Currently pending licensing. PLEASE DO NOT DISTRIBUTE.

@@ -221,6 +221,8 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 		_robot_models[robot_filename.first] =
 			std::make_shared<Sai2Model::Sai2Model>(robot_filename.second);
 		_robot_models[robot_filename.first]->setTRobotBase(T_robot_base);
+		updateRobotGraphics(robot_filename.first,
+							_robot_models[robot_filename.first]->q());
 	}
 	for (auto object_pose : _object_poses) {
 		_object_velocities[object_pose.first] =
@@ -555,6 +557,9 @@ void Sai2Graphics::renderGraphicsWorld() {
 	setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
 
+	// update shadow maps
+	_world->updateShadowMaps();
+
 	render(camera_name);
 }
 
@@ -665,9 +670,6 @@ void Sai2Graphics::updateRobotGraphics(
 			updateGraphicsLink(link, robot_model);
 		}
 	}
-	// update shadow maps. TODO: consider moving out from here if it is too
-	// expensive
-	_world->updateShadowMaps();
 }
 
 void Sai2Graphics::updateObjectGraphics(

@@ -35,7 +35,7 @@ public:
         }
     }
 
-    void initializeWindow(const std::string& window_name);
+    void initializeWindow(const std::string& window_name, const int n_window = 0);
     void renderGraphicsWorld();
     void resetWorld(const bool verbose = false);
 

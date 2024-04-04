@@ -130,7 +130,7 @@ void mouseScroll(GLFWwindow* window, double xoffset, double yoffset) {
 	}
 }
 
-GLFWwindow* glfwInitialize(const std::string& window_name) {
+GLFWwindow* glfwInitialize(const std::string& window_name, const int n_window) {
 	/*------- Set up visualization -------*/
 	// set up error callback
 	glfwSetErrorCallback(glfwError);
@@ -149,14 +149,19 @@ GLFWwindow* glfwInitialize(const std::string& window_name) {
 	int windowH = 0.5 * screenH;
     // int windowW = 0.9 * screenW;
 	// int windowH = 0.9 * screenH;
-	int windowPosY = (screenH - windowH) / 2;
-	int windowPosX = windowPosY;
+	// int windowPosY = (screenH - windowH) / 2;
+	// int windowPosX = windowPosY;
 
 	// create window and make it current context
 	glfwWindowHint(GLFW_VISIBLE, 0);
 	GLFWwindow* window =
-		glfwCreateWindow(windowW, windowH, window_name.c_str(), NULL, NULL);
-	glfwSetWindowPos(window, windowPosX, windowPosY);
+	glfwCreateWindow(windowW, windowH, window_name.c_str(), NULL, NULL);
+	if (n_window == 0) {
+		glfwSetWindowPos(window, 0, screenH/4);
+	} else {
+		glfwSetWindowPos(window, screenW/2, screenH/4);
+	}
+	// glfwSetWindowPos(window, windowPosX, windowPosY);
 	glfwShowWindow(window);
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
@@ -202,10 +207,10 @@ MultiWorldView::MultiWorldView(const std::vector<std::string>& path_to_world_fil
 		for (int i = 0; i < 2; ++i) {
 			#ifdef MACOSX
 				auto path = std::__fs::filesystem::current_path();
-				initializeWindow(window_name);
+				initializeWindow(window_name, i);
 				std::__fs::filesystem::current_path(path);
 			#else
-				initializeWindow(window_name);
+				initializeWindow(window_name, i);
 			#endif
 			_graphics[i]->setWindow(_window[i]);
 		}
@@ -221,8 +226,8 @@ MultiWorldView::MultiWorldView(const std::vector<std::string>& path_to_world_fil
 
 }
 
-void MultiWorldView::initializeWindow(const std::string& window_name) {
-	_window.push_back(glfwInitialize(window_name));
+void MultiWorldView::initializeWindow(const std::string& window_name, const int n_window) {
+	_window.push_back(glfwInitialize(window_name, n_window));
 
 	// set callbacks
 	glfwSetKeyCallback(_window[_window.size() - 1], keySelect);
@@ -268,51 +273,8 @@ void MultiWorldView::renderGraphicsWorld() {
 	if (!_side_by_side) {
 		for (int i = 0; i < 2; ++i) {
 			glfwMakeContextCurrent(_window[i]);
-			if (i == 0) {
-				glfwSetWindowPos(_window[i], 0, _graphics[i]->getWindowHeight()/4);
-			} else {
-				glfwSetWindowPos(_window[i], _graphics[i]->getWindowWidth()/2, _graphics[i]->getWindowHeight()/4);
-			}
 			_graphics[i]->renderGraphicsWorld();
 		}
-	
-
-	// for (int i = 0; i < 2; ++i) {
-	// 	if (_side_by_side && i == 1) { continue; }
-	// 	// update graphics. this automatically waits for the correct amount of time
-	// 	glfwMakeContextCurrent(_window[i]);
-	// 	glfwGetFramebufferSize(_window[i], &_window_width, &_window_height);
-	// 	glfwSwapBuffers(_window[i]);
-	// 	if (!_side_by_side) {
-	// 		// set window position
-	// 		if (i == 0) {
-	// 			glfwSetWindowPos(_window[i], 0, _window_height/4);
-	// 		} else if (i == 1) {
-	// 			glfwSetWindowPos(_window[i], _window_width/2, _window_height/4);
-	// 		}
-	// 	}
-
-	// 	glFinish();
-
-	// 	// poll for events
-	// 	glfwPollEvents();
-
-	// 	// multi-window render
-	// 	if (!_side_by_side) {
-	// 		// _view_panels[i]->setLocalPos(0.0, 0.0);
-	// 		// _view_panels[i]->setSize(_window_width, _window_height);
-	// 		// _panel_frame_buffer[i]->setSize(_window_width, _window_height);
-	// 		// _panel_frame_buffer[i]->renderView();
-	// 		_graphics[i]->renderGraphicsWorld();
-	// 		// if (i == 0) {
-	// 		// 	_camera_primary->renderView(_window_width, _window_height);
-	// 		// } else {
-	// 		// 	_camera_secondary->renderView(_window_width, _window_height);
-	// 		// }
-	// 	}
-	// }
-
-	// side-by-side setup
 	} else {
 		// setup frame buffer window sizes (supports only 2 at this point)
 		int halfW = _window_width / 2;

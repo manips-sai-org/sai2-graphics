@@ -8,7 +8,8 @@
 
 using namespace std;
 
-const string world_file = "resources/world.urdf";
+const string world_file =
+	string(EXAMPLES_FOLDER) + "/02-update_rendering/world.urdf";
 const string robot_name = "RBot";
 const string object_name = "Box";
 

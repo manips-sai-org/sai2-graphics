@@ -10,6 +10,8 @@
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
 
+#include "parser/Sai2ModelParserUtils.h"
+
 typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
 typedef const my_shared_ptr<const Sai2Urdfreader::Link> ConstLinkPtr;
 typedef my_shared_ptr<Sai2Urdfreader::Joint> JointPtr;
@@ -59,7 +61,8 @@ static cGenericObject* getGenericObjectChildRecursive(
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 static void loadVisualtoGenericObject(
-	cGenericObject* object, const my_shared_ptr<Sai2Urdfreader::Visual>& visual_ptr,
+	cGenericObject* object,
+	const my_shared_ptr<Sai2Urdfreader::Visual>& visual_ptr,
 	const std::string& working_dirname = "./") {
 	// parse material if specified
 	const auto material_ptr = visual_ptr->material;
@@ -74,19 +77,37 @@ static void loadVisualtoGenericObject(
 	auto tmp_mesh = new cMesh();
 	if (geom_type == Sai2Urdfreader::Geometry::MESH) {
 		// downcast geometry ptr to mesh type
-		const auto mesh_ptr =
-			dynamic_cast<const Sai2Urdfreader::Mesh*>(visual_ptr->geometry.get());
+		const auto mesh_ptr = dynamic_cast<const Sai2Urdfreader::Mesh*>(
+			visual_ptr->geometry.get());
 		assert(mesh_ptr);
+
 		// load object
-		if (false == cLoadFileOBJ(tmp_mmesh,
-								  working_dirname + "/" + mesh_ptr->filename)) {
-			if (false == cLoadFile3DS(tmp_mmesh, working_dirname + "/" +
-													 mesh_ptr->filename)) {
-				cerr << "Couldn't load obj/3ds robot link file: "
-					 << working_dirname + "/" + mesh_ptr->filename << endl;
-				abort();
-			}
+		bool file_load_success = false;
+
+		std::string processed_filepath =
+			working_dirname + "/" + mesh_ptr->filename;
+		if (Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename) !=
+			mesh_ptr->filename) {
+			processed_filepath =
+				Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename);
 		}
+
+		if (processed_filepath.substr(processed_filepath.length() - 4) ==
+			".stl") {
+			file_load_success = cLoadFileSTL(tmp_mmesh, processed_filepath);
+		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
+				   ".obj") {
+			file_load_success = cLoadFileOBJ(tmp_mmesh, processed_filepath);
+		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
+				   ".3ds") {
+			file_load_success = cLoadFile3DS(tmp_mmesh, processed_filepath);
+		}
+		if (!file_load_success) {
+			cerr << "Couldn't load obj/3ds/STL robot link file: "
+				 << processed_filepath << endl;
+			abort();
+		}
+
 		// apply scale
 		tmp_mmesh->scaleXYZ(mesh_ptr->scale.x, mesh_ptr->scale.y,
 							mesh_ptr->scale.z);
@@ -95,8 +116,8 @@ static void loadVisualtoGenericObject(
 		}
 	} else if (geom_type == Sai2Urdfreader::Geometry::BOX) {
 		// downcast geometry ptr to box type
-		const auto box_ptr =
-			dynamic_cast<const Sai2Urdfreader::Box*>(visual_ptr->geometry.get());
+		const auto box_ptr = dynamic_cast<const Sai2Urdfreader::Box*>(
+			visual_ptr->geometry.get());
 		assert(box_ptr);
 		// create chai box mesh
 		cCreateBox(tmp_mesh, box_ptr->dim.x, box_ptr->dim.y, box_ptr->dim.z);
@@ -106,8 +127,8 @@ static void loadVisualtoGenericObject(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::SPHERE) {
 		// downcast geometry ptr to sphere type
-		const auto sphere_ptr =
-			dynamic_cast<const Sai2Urdfreader::Sphere*>(visual_ptr->geometry.get());
+		const auto sphere_ptr = dynamic_cast<const Sai2Urdfreader::Sphere*>(
+			visual_ptr->geometry.get());
 		assert(sphere_ptr);
 		// create chai sphere mesh
 		cCreateSphere(tmp_mesh, sphere_ptr->radius);
@@ -117,20 +138,21 @@ static void loadVisualtoGenericObject(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::CYLINDER) {
 		// downcast geometry ptr to cylinder type
-		const auto cylinder_ptr =
-			dynamic_cast<const Sai2Urdfreader::Cylinder*>(visual_ptr->geometry.get());
+		const auto cylinder_ptr = dynamic_cast<const Sai2Urdfreader::Cylinder*>(
+			visual_ptr->geometry.get());
 		assert(cylinder_ptr);
-		// create chai sphere mesh
+		// create chai cylinder mesh
 		chai3d::cCreateCylinder(tmp_mesh, cylinder_ptr->length,
-								cylinder_ptr->radius);
+								cylinder_ptr->radius, 32, 1, 1, true, true,
+								cVector3d(0, 0, -cylinder_ptr->length / 2));
 		if (color) {
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::CAPSULE) {
 		// downcast geometry ptr to cylinder type
-		const auto capsule_ptr =
-			dynamic_cast<const Sai2Urdfreader::Capsule*>(visual_ptr->geometry.get());
+		const auto capsule_ptr = dynamic_cast<const Sai2Urdfreader::Capsule*>(
+			visual_ptr->geometry.get());
 		assert(capsule_ptr);
 		if (color) {
 			if (material_ptr && material_ptr->has_color2) {
@@ -162,8 +184,8 @@ static void loadVisualtoGenericObject(
 		tmp_mmesh->addMesh(tmp_mesh);
 	} else if (geom_type == Sai2Urdfreader::Geometry::PYRAMID) {
 		// downcast geometry ptr to pyramid type
-		const auto pyramid_ptr =
-			dynamic_cast<const Sai2Urdfreader::Pyramid*>(visual_ptr->geometry.get());
+		const auto pyramid_ptr = dynamic_cast<const Sai2Urdfreader::Pyramid*>(
+			visual_ptr->geometry.get());
 		assert(pyramid_ptr);
 		chai3d::cCreatePyramid(tmp_mesh, pyramid_ptr->num_sides,
 							   pyramid_ptr->base_size, pyramid_ptr->height,
@@ -200,9 +222,10 @@ void UrdfToSai2GraphicsWorld(
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& object_poses,
 	std::vector<std::string>& camera_names, bool verbose) {
 	// load world urdf file
-	ifstream model_file(filename);
+	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
+	ifstream model_file(resolved_filename);
 	if (!model_file) {
-		cerr << "Error opening file '" << filename << "'." << endl;
+		cerr << "Error opening file '" << resolved_filename << "'." << endl;
 		abort();
 	}
 
@@ -248,8 +271,9 @@ void UrdfToSai2GraphicsWorld(
 		world->addChild(robot);
 
 		// load robot from file
-		UrdfToSai2GraphicsRobot(robot_spec->model_filename, robot, verbose,
-								robot_spec->model_working_dir);
+		UrdfToSai2GraphicsRobot(
+			robot_spec->model_filename, robot, verbose,
+			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
 		assert(robot->m_name == robot_spec->model_name);
 
 		// overwrite robot name with custom name for this instance
@@ -262,7 +286,8 @@ void UrdfToSai2GraphicsWorld(
 				"Different robots cannot have the same name in the world");
 		}
 		robot_filenames[robot->m_name] =
-			robot_spec->model_working_dir + "/" + robot_spec->model_filename;
+			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
+			"/" + robot_spec->model_filename;
 	}
 
 	// parse cameras
