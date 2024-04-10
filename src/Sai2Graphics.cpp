@@ -785,6 +785,15 @@ void Sai2Graphics::writeFrameBuffer(const std::string camera_name,
 	std::fclose(fp);
 }
 
+std::vector<unsigned char> Sai2Graphics::getFrameBuffer(const std::string camera_name) {
+	_frame_buffer[camera_name]->renderView();
+	chai3d::cImagePtr image = chai3d::cImage::create();
+	_frame_buffer[camera_name]->copyImageBuffer(image);
+	unsigned char* data = image->getData();  // GL_RGBA
+	unsigned int size = image->getSizeInBytes();
+	return std::vector<unsigned char>(data, data + size);
+}
+
 // get current camera pose
 void Sai2Graphics::getCameraPose(const std::string& camera_name,
 								 Eigen::Vector3d& ret_position,

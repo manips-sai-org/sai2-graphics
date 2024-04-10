@@ -197,6 +197,7 @@ public:
 						 const std::string fname);
 	void writeFrameBuffer(const std::string camera_name,
 						  const std::string fname);
+	std::vector<unsigned char> getFrameBuffer(const std::string camera_name);
 
 	/**
 	 * @brief Get pointer to Chai camera object.
