@@ -14,3 +14,5 @@ add_subdirectory(06-force_sensor_display)
 ADD_SUBDIRECTORY(07-get_rgb_data)
 ADD_SUBDIRECTORY(08-get_rgb_data_multiworld)
 ADD_SUBDIRECTORY(09-set_get_rgb_data)
+
+add_subdirectory(99-robot_graphics)

@@ -393,18 +393,21 @@ const std::vector<std::string> Sai2Graphics::getObjectNames() const {
 	return object_names;
 }
 
-void Sai2Graphics::renderGraphicsWorld() {
+void Sai2Graphics::renderGraphicsWorld(const std::string& render_camera_name) {
 
-	// swap camera if needed
-	if (consume_first_press(NEXT_CAMERA_KEY)) {
-		_current_camera_index =
-			(_current_camera_index + 1) % _camera_names.size();
+	std::string camera_name = render_camera_name;
+	if (render_camera_name == "" ) {
+		// swap camera if needed
+		if (consume_first_press(NEXT_CAMERA_KEY)) {
+			_current_camera_index =
+				(_current_camera_index + 1) % _camera_names.size();
+		}
+		if (consume_first_press(PREV_CAMERA_KEY)) {
+			_current_camera_index =
+				(_current_camera_index - 1) % _camera_names.size();
+		}
+		camera_name = _camera_names[_current_camera_index];
 	}
-	if (consume_first_press(PREV_CAMERA_KEY)) {
-		_current_camera_index =
-			(_current_camera_index - 1) % _camera_names.size();
-	}
-	const std::string camera_name = _camera_names[_current_camera_index];
 
 	// update graphics. this automatically waits for the correct amount of time
 	glfwGetFramebufferSize(_window, &_window_width, &_window_height);
@@ -820,6 +823,31 @@ void Sai2Graphics::setCameraPose(const std::string& camera_name,
 	cVector3d vert(vertical_axis[0], vertical_axis[1], vertical_axis[2]);
 	cVector3d look(lookat_point[0], lookat_point[1], lookat_point[2]);
 	camera->set(pos, look, vert);
+}
+
+void Sai2Graphics::setCameraOnRobot(const std::string& camera_name,
+									const std::string& robot_name,
+									const std::string& link_name,
+									const Eigen::Affine3d& rel_pose,
+									const std::vector<int>& order) {
+	auto camera = getCamera(camera_name);
+	auto it = _robot_models.find(robot_name);
+	if (it == _robot_models.end()) {
+		throw std::invalid_argument(
+			"Robot not found in Sai2Graphics::updateRobotGraphics");
+	}
+	Vector3d pos_in_world = _robot_models.at(robot_name)->positionInWorld(link_name, rel_pose.translation());
+	Matrix3d rot_in_world = _robot_models.at(robot_name)->rotationInWorld(link_name, rel_pose.linear());
+	cVector3d pos(pos_in_world(0), pos_in_world(1), pos_in_world(2));
+	cVector3d look(rot_in_world(0, order[0]), rot_in_world(1, order[0]), rot_in_world(2, order[0]));
+	cVector3d vert(rot_in_world(0, order[1]), rot_in_world(1, order[1]), rot_in_world(2, order[1]));
+	camera->set(pos, look, vert);
+}
+
+void Sai2Graphics::setCameraFov(const std::string& camera_name,
+								const double& fov_rad) {
+	auto camera = getCamera(camera_name);
+	camera->setFieldViewAngleRad(fov_rad);
 }
 
 // get camera object

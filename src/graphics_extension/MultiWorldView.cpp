@@ -273,7 +273,7 @@ void MultiWorldView::renderGraphicsWorld() {
 	if (!_side_by_side) {
 		for (int i = 0; i < 2; ++i) {
 			glfwMakeContextCurrent(_window[i]);
-			_graphics[i]->renderGraphicsWorld();
+			_graphics[i]->renderGraphicsWorld(_camera_names[i]);
 		}
 	} else {
 		// setup frame buffer window sizes (supports only 2 at this point)

@@ -65,7 +65,7 @@ public:
 	 *
 	 * @param camera_name the name of the camera to display
 	 */
-	void renderGraphicsWorld();
+	void renderGraphicsWorld(const std::string& render_camera_name = "");
 
 	/**
 	 * @brief sets the glfw window pointer 
@@ -198,6 +198,16 @@ public:
 	void writeFrameBuffer(const std::string camera_name,
 						  const std::string fname);
 	std::vector<unsigned char> getFrameBuffer(const std::string camera_name);
+
+	// camera assignment to follow a robot link
+	void setCameraOnRobot(const std::string& camera_name,
+						  const std::string& robot_name,
+						  const std::string& link_name,
+						  const Eigen::Affine3d& rel_pose,
+						  const std::vector<int>& order = {2, 1});  // look at, up
+
+	void setCameraFov(const std::string& camera_name,
+					  const double& fov_rad);
 
 	/**
 	 * @brief Get pointer to Chai camera object.
@@ -344,7 +354,7 @@ private:
 	 * @brief used to store frame buffers for recording
 	 * 
 	 */
-	std::unordered_map<string, chai3d::cFrameBufferPtr> _frame_buffer;
+	std::map<string, chai3d::cFrameBufferPtr> _frame_buffer;
 
 };
 
