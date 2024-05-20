@@ -49,6 +49,18 @@ int main() {
 		graphics->updateObjectGraphics(object_name, object_pose);
 		graphics->renderGraphicsWorld();
 
+		if(counter == 500)
+		{
+			cout << "\ndisabling rendering for the object" << endl;
+			graphics->setRenderingEnabled(false, object_name);
+		}
+
+		if(counter == 800)
+		{
+			cout << "\nre enabling rendering for the object" << endl;
+			graphics->setRenderingEnabled(true, object_name);
+		}
+
 		counter++;
 	}
 
