@@ -141,7 +141,7 @@ public:
 	*/
 	void showLinkFrame(bool show_frame, const std::string& robot_name,
 					   const std::string& link_name = "",
-					   const double frame_pointer_length = 0.03);
+					   const double frame_pointer_length = 0.20);
 
 	/**
 	 * @brief Render wire mesh for a particular link or all links on a robot.
@@ -169,6 +169,20 @@ public:
 	bool isKeyPressed(int key) const {
 		return glfwGetKey(_window, key) == GLFW_PRESS;
 	}
+
+	void setRenderingEnabled(const bool rendering_enabled,
+							 const string robot_or_object_name,
+							 const string link_name = "");
+
+	bool modelExistsInWorld(const std::string& model_name) const
+	{
+		return robotExistsInWorld(model_name) || objectExistsInWorld(model_name);
+	}
+
+	bool robotExistsInWorld(const std::string& robot_name,
+									const std::string& link_name = "") const;
+
+	bool objectExistsInWorld(const std::string& object_name) const;
 
 private:
 	void initializeWorld(const std::string& path_to_world_file,
@@ -236,11 +250,6 @@ private:
 
 	void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame,
 								const double frame_pointer_length);
-
-	bool robotExistsInGraphicsWorld(const std::string& robot_name,
-									const std::string& link_name = "") const;
-
-	bool objectExistsInGraphicsWorld(const std::string& object_name) const;
 
 	int findForceSensorDisplay(const std::string& robot_or_object_name,
 							   const std::string& link_name) const;
