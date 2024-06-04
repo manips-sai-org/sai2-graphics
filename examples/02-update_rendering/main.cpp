@@ -20,6 +20,9 @@ int main() {
 	auto graphics =
 		new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
 
+	// add label
+	graphics->addLabel("test_label", "camera");
+
 	// robot joint pose
 	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
 
@@ -48,6 +51,21 @@ int main() {
 		graphics->updateRobotGraphics(robot_name, robot_q);
 		graphics->updateObjectGraphics(object_name, object_pose);
 		graphics->renderGraphicsWorld();
+
+		// update text
+		graphics->updateLabel("test_label", "test label " + std::to_string(counter), 480, 15);
+
+		if(counter == 500)
+		{
+			cout << "\ndisabling rendering for the object" << endl;
+			graphics->setRenderingEnabled(false, object_name);
+		}
+
+		if(counter == 800)
+		{
+			cout << "\nre enabling rendering for the object" << endl;
+			graphics->setRenderingEnabled(true, object_name);
+		}
 
 		counter++;
 	}

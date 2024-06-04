@@ -157,7 +157,7 @@ public:
 	*/
 	void showLinkFrame(bool show_frame, const std::string& robot_name,
 					   const std::string& link_name = "",
-					   const double frame_pointer_length = 0.03);
+					   const double frame_pointer_length = 0.20);
 
 	/**
 	 * @brief Render wire mesh for a particular link or all links on a robot.
@@ -190,6 +190,20 @@ public:
 		return glfwGetKey(_window, key) == GLFW_PRESS;
 	}
 
+	void setRenderingEnabled(const bool rendering_enabled,
+							 const string robot_or_object_name,
+							 const string link_name = "");
+
+	bool modelExistsInWorld(const std::string& model_name) const
+	{
+		return robotExistsInWorld(model_name) || objectExistsInWorld(model_name);
+	}
+
+	bool robotExistsInWorld(const std::string& robot_name,
+									const std::string& link_name = "") const;
+
+	bool objectExistsInWorld(const std::string& object_name) const;
+
 	// functions related to frame buffer loading and saving
 	void addFrameBuffer(const std::string camera_name,
 						const int width = 1280, const int height = 720);
@@ -219,6 +233,81 @@ public:
 
 	int getWindowWidth() { return _window_width; }
 	int getWindowHeight() { return _window_height; }
+
+	void duplicateRobot(const std::string& robot_name,
+						const int n_copies) {
+		
+	}
+
+	/**
+	 * @brief Add label
+	 * 
+	 * @param label_name label name to refer to in map
+	 * @param camera_name camera to render text to
+	 */
+	void addLabel(const std::string& label_name,
+				  const std::string& camera_name) {
+		auto font = chai3d::NEW_CFONTCALIBRI20();  // check https://www.chai3d.org/download/doc/html/namespacechai3d.html#af8ad087918683eb3afe1669c641f0516 for fonts
+		_labels[label_name] = new chai3d::cLabel(font);
+		_labels[label_name]->m_fontColor.setBlack();  
+		getCamera(camera_name)->m_frontLayer->addChild(_labels[label_name]);
+	}
+
+	/**
+	 * @brief Update label
+	 * 
+	 * @param label_name label name to refer to in map
+	 * @param text text to display 
+	 * @param x_location x pixel location
+	 * @param y_location y pixel location 
+	 */
+	void updateLabel(const std::string& label_name,
+					 const std::string& text,
+				     const int& x_location,
+					 const int& y_location = 15) {
+		_labels[label_name]->setText(text);
+		_labels[label_name]->setLocalPos(x_location, y_location);
+		// m_label[name]->->setLocalPos((int)(0.5 * (width - m_label[name]->->getWidth())), y_location);
+	}
+
+	/**
+	 * @brief Add spheres to the world 
+	 * 
+	 */
+	void addSphere(const Vector3d& origin, 
+				   const double radius,
+				   const int color_opt = 0) {
+		auto sphere = new chai3d::cShapeSphere(radius);
+		auto material = std::make_shared<chai3d::cMaterial>();
+		if (color_opt == 0) {
+			material->setGreenForest();
+		} else {
+			material->setRed();
+		}
+		sphere->setMaterial(material);
+		sphere->setLocalPos(chai3d::cVector3d(origin));
+		_world->addChild(sphere);
+	}
+
+	/**
+	 * @brief Add block to the world 
+	 * 
+	 * @param origin 
+	 * @param length 
+	 * @param width 
+	 * @param height 
+	 */
+	void addBlock(const Vector3d& origin,
+				  const double& length,
+				  const double& width,
+				  const double& height) {
+		auto box = new chai3d::cShapeBox(length, width, height);
+		auto material = std::make_shared<chai3d::cMaterial>();
+		material->setBlue();
+		box->setMaterial(material);
+		box->setLocalPos(chai3d::cVector3d(origin));
+		_world->addChild(box);
+	}
 
 private:
 	void initializeWorld(const std::string& path_to_world_file,
@@ -287,11 +376,6 @@ private:
 	void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame,
 								const double frame_pointer_length);
 
-	bool robotExistsInGraphicsWorld(const std::string& robot_name,
-									const std::string& link_name = "") const;
-
-	bool objectExistsInGraphicsWorld(const std::string& object_name) const;
-
 	int findForceSensorDisplay(const std::string& robot_or_object_name,
 							   const std::string& link_name) const;
 
@@ -355,6 +439,8 @@ private:
 	 * 
 	 */
 	std::map<string, chai3d::cFrameBufferPtr> _frame_buffer;
+
+	std::map<std::string, chai3d::cLabel*> _labels;
 
 };
 
