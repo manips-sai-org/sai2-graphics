@@ -235,6 +235,7 @@ void Sai2Graphics::clearWorld() {
 	_camera_names.clear();
 	_force_sensor_displays.clear();
 	_ui_force_widgets.clear();
+	_camera_link_attachments.clear();
 }
 
 void Sai2Graphics::initializeWindow(const std::string& window_name) {
@@ -246,10 +247,119 @@ void Sai2Graphics::initializeWindow(const std::string& window_name) {
 	glfwSetScrollCallback(_window, mouseScroll);
 }
 
+void Sai2Graphics::setCameraPose(const std::string& camera_name,
+								 const Eigen::Affine3d& camera_pose) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: Camera [" << camera_name
+			 << "] does not exists in the graphics world. Cannot set pose"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) ==
+		_camera_link_attachments.end()) {
+		cout << "WARNING: Cannot set pose for camera [" << camera_name
+			 << "] attached to a robot or object" << endl;
+		return;
+	}
+	Vector3d pos = camera_pose.translation();
+	Vector3d up = -camera_pose.rotation().col(1);
+	Vector3d lookat = pos + camera_pose.linear().col(2);
+	setCameraPoseInternal(camera_name, pos, up, lookat);
+}
+
+Eigen::Affine3d Sai2Graphics::getCameraPose(const std::string& camera_name) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: Camera [" << camera_name
+			 << "] does not exists in the graphics world. Cannot get pose"
+			 << endl;
+		return Affine3d::Identity();
+	}
+	Vector3d pos, up, lookat;
+	getCameraPoseInternal(camera_name, pos, up, lookat);
+
+	Matrix3d rotation = Matrix3d::Identity();
+	rotation.col(1) = -up;
+	rotation.col(2) = (lookat - pos).normalized();
+	rotation.col(0) = rotation.col(1).cross(rotation.col(2));
+
+	Affine3d camera_pose = Affine3d(rotation);
+	camera_pose.translation() = pos;
+
+	return camera_pose;
+}
+
+void Sai2Graphics::attachCameraToRobotLink(
+	const std::string& camera_name, const std::string& robot_name,
+	const std::string& link_name, const Eigen::Affine3d& pose_in_link) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: camera [" << camera_name
+			 << "] not found in graphics world, cannot attach to robot link"
+			 << endl;
+		return;
+	}
+	if (!robotExistsInWorld(robot_name, link_name)) {
+		cout << "WARNING: robot [" << robot_name << "] link [" << link_name
+			 << "] not found in graphics world, cannot attach a camera to it"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) !=
+		_camera_link_attachments.end()) {
+		cout << "camera [" << camera_name
+			 << "] already attached to a robot or object. detach first" << endl;
+		return;
+	}
+	_camera_link_attachments[camera_name] =
+		std::make_shared<CameraLinkAttachment>(robot_name, link_name,
+											   pose_in_link);
+}
+
+void Sai2Graphics::attachCameraToObject(const std::string& camera_name,
+										const std::string& object_name,
+										const Eigen::Affine3d& pose_in_object) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: camera [" << camera_name
+			 << "] not found in graphics world, cannot attach to object"
+			 << endl;
+		return;
+	}
+	if (!objectExistsInWorld(object_name)) {
+		cout << "WARNING: object [" << object_name
+			 << "] not found in graphics world, cannot attach a camera to it"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) !=
+		_camera_link_attachments.end()) {
+		cout << "camera [" << camera_name
+			 << "] already attached to a robot or object. detach first" << endl;
+		return;
+	}
+	_camera_link_attachments[camera_name] =
+		std::make_shared<CameraLinkAttachment>(object_name, "", pose_in_object);
+}
+
+void Sai2Graphics::detachCameraFromRobotOrObject(
+	const std::string& camera_name) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: camera [" << camera_name
+			 << "] not found in graphics world, cannot detach from robot or "
+				"object"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) ==
+		_camera_link_attachments.end()) {
+		cout << "camera [" << camera_name
+			 << "] not attached to any object or robot" << endl;
+		return;
+	}
+	_camera_link_attachments.erase(camera_name);
+}
+
 void Sai2Graphics::addForceSensorDisplay(
 	const Sai2Model::ForceSensorData& sensor_data) {
-	if (!robotExistsInWorld(sensor_data.robot_name,
-									sensor_data.link_name)) {
+	if (!robotExistsInWorld(sensor_data.robot_name, sensor_data.link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
 					 "unexisting robot or link in "
 					 "Sai2Simulation::addForceSensorDisplay\n"
@@ -294,8 +404,8 @@ void Sai2Graphics::updateDisplayedForceSensor(
 		->update(force_data.force_world_frame, force_data.moment_world_frame);
 }
 
-bool Sai2Graphics::robotExistsInWorld(
-	const std::string& robot_name, const std::string& link_name) const {
+bool Sai2Graphics::robotExistsInWorld(const std::string& robot_name,
+									  const std::string& link_name) const {
 	auto it = _robot_models.find(robot_name);
 	if (it == _robot_models.end()) {
 		return false;
@@ -306,13 +416,21 @@ bool Sai2Graphics::robotExistsInWorld(
 	return true;
 }
 
-bool Sai2Graphics::objectExistsInWorld(
-	const std::string& object_name) const {
+bool Sai2Graphics::objectExistsInWorld(const std::string& object_name) const {
 	auto it = _object_poses.find(object_name);
 	if (it == _object_poses.end()) {
 		return false;
 	}
 	return true;
+}
+
+bool Sai2Graphics::cameraExistsInWorld(const std::string& camera_name) const {
+	for (const std::string name : _camera_names) {
+		if (name == camera_name) {
+			return true;
+		}
+	}
+	return false;
 }
 
 int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name,
@@ -410,7 +528,8 @@ void Sai2Graphics::renderGraphicsWorld() {
 
 	// handle mouse button presses
 	Eigen::Vector3d camera_pos, camera_lookat_point, camera_up_axis;
-	getCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
+	getCameraPoseInternal(camera_name, camera_pos, camera_up_axis,
+						  camera_lookat_point);
 	Vector3d cam_depth_axis = camera_lookat_point - camera_pos;
 	cam_depth_axis.normalize();
 	Vector3d cam_right_axis = cam_depth_axis.cross(camera_up_axis);
@@ -548,8 +667,28 @@ void Sai2Graphics::renderGraphicsWorld() {
 		}
 	}
 
-	setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
+	setCameraPoseInternal(camera_name, camera_pos, camera_up_axis,
+						  camera_lookat_point);
 	glfwGetCursorPos(_window, &_last_cursorx, &_last_cursory);
+
+	// if camera is attached to a robot link or object, override the pose
+	if (_camera_link_attachments.find(camera_name) !=
+			_camera_link_attachments.end()) {
+		const auto attachment = _camera_link_attachments.at(camera_name);
+
+		Affine3d camera_pose;
+		if (attachment->link_name == "") {
+			camera_pose = getObjectPose(attachment->model_name) *
+						  attachment->pose_in_link;
+		} else {
+			camera_pose =
+				_robot_models.at(attachment->model_name)
+					->transformInWorld(attachment->link_name,
+									   attachment->pose_in_link.translation(),
+									   attachment->pose_in_link.rotation());
+		}
+		setCameraPose(camera_name, camera_pose);
+	}
 
 	// update shadow maps
 	_world->updateShadowMaps();
@@ -725,10 +864,10 @@ void Sai2Graphics::render(const std::string& camera_name) {
 }
 
 // get current camera pose
-void Sai2Graphics::getCameraPose(const std::string& camera_name,
-								 Eigen::Vector3d& ret_position,
-								 Eigen::Vector3d& ret_vertical_axis,
-								 Eigen::Vector3d& ret_lookat_point) {
+void Sai2Graphics::getCameraPoseInternal(const std::string& camera_name,
+										 Eigen::Vector3d& ret_position,
+										 Eigen::Vector3d& ret_vertical_axis,
+										 Eigen::Vector3d& ret_lookat_point) {
 	auto camera = getCamera(camera_name);
 	cVector3d pos, vert, lookat;
 	pos = camera->getLocalPos();
@@ -741,10 +880,10 @@ void Sai2Graphics::getCameraPose(const std::string& camera_name,
 }
 
 // set camera pose
-void Sai2Graphics::setCameraPose(const std::string& camera_name,
-								 const Eigen::Vector3d& position,
-								 const Eigen::Vector3d& vertical_axis,
-								 const Eigen::Vector3d& lookat_point) {
+void Sai2Graphics::setCameraPoseInternal(const std::string& camera_name,
+										 const Eigen::Vector3d& position,
+										 const Eigen::Vector3d& vertical_axis,
+										 const Eigen::Vector3d& lookat_point) {
 	auto camera = getCamera(camera_name);
 	cVector3d pos(position[0], position[1], position[2]);
 	cVector3d vert(vertical_axis[0], vertical_axis[1], vertical_axis[2]);
@@ -936,7 +1075,8 @@ void Sai2Graphics::setRenderingEnabled(const bool rendering_enabled,
 		for (unsigned int i = 0; i < target_link->getNumChildren(); ++i) {
 			child = target_link->getChild(i);
 			// only apply to children that are visual elements (supposed to have
-			// the same name), not children links (which will have different names)
+			// the same name), not children links (which will have different
+			// names)
 			if (child->m_name == link_name) {
 				child->setEnabled(rendering_enabled, false);
 			}
