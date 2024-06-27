@@ -1,7 +1,7 @@
 find_package(SAI2-COMMON)
 include_directories(${SAI2-COMMON_INCLUDE_DIRS})
 
-set(EXAMPLE_NAME 09-set_get_rgb_data)
+set(EXAMPLE_NAME 10-set_get_rgb_data)
 
 # create an executable
 ADD_EXECUTABLE (${EXAMPLE_NAME} main.cpp)

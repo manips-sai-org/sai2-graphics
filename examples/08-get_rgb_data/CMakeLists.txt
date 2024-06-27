@@ -1,14 +1,14 @@
-set(EXAMPLE_NAME 08-get_rgb_data_multiworld)
+set(EXAMPLE_NAME 08-get_rgb_data)
 
 # create an executable
 ADD_EXECUTABLE (${EXAMPLE_NAME} main.cpp)
-ADD_EXECUTABLE (test_headless test.cpp)
+ADD_EXECUTABLE (test test.cpp)
 
 # and link the library against the executable
 TARGET_LINK_LIBRARIES (${EXAMPLE_NAME}
 	${SAI2-GRAPHICS_EXAMPLES_LIBRARIES}
 )
-TARGET_LINK_LIBRARIES (test_headless
+TARGET_LINK_LIBRARIES (test
 	${SAI2-GRAPHICS_EXAMPLES_LIBRARIES}
 )
 

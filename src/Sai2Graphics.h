@@ -22,6 +22,19 @@
 
 namespace Sai2Graphics {
 
+struct CameraLinkAttachment {
+	std::string model_name;
+	std::string link_name;	// empty if object
+	Eigen::Affine3d pose_in_link;
+
+	CameraLinkAttachment(const std::string& model_name,
+						 const std::string& link_name,
+						 const Eigen::Affine3d& pose_in_link)
+		: model_name(model_name),
+		  link_name(link_name),
+		  pose_in_link(pose_in_link) {}
+};
+
 class Sai2Graphics {
 public:
 	/**
@@ -181,6 +194,23 @@ public:
 		return _camera_names[_current_camera_index];
 	}
 
+	void setCameraPose(const std::string& camera_name,
+					   const Eigen::Affine3d& camera_pose);
+
+	Eigen::Affine3d getCameraPose(const std::string& camera_name);
+
+	// convention: Z forward, X right
+	void attachCameraToRobotLink(const std::string& camera_name,
+								 const std::string& robot_name,
+								 const std::string& link_name,
+								 const Eigen::Affine3d& pose_in_link);
+
+	void attachCameraToObject(const std::string& camera_name,
+							  const std::string& object_name,
+							  const Eigen::Affine3d& pose_in_object);
+
+	void detachCameraFromRobotOrObject(const std::string& camera_name);
+
 	void addForceSensorDisplay(const Sai2Model::ForceSensorData& sensor_data);
 
 	void updateDisplayedForceSensor(
@@ -194,13 +224,13 @@ public:
 							 const string robot_or_object_name,
 							 const string link_name = "");
 
-	bool modelExistsInWorld(const std::string& model_name) const
-	{
-		return robotExistsInWorld(model_name) || objectExistsInWorld(model_name);
+	bool modelExistsInWorld(const std::string& model_name) const {
+		return robotExistsInWorld(model_name) ||
+			   objectExistsInWorld(model_name);
 	}
 
 	bool robotExistsInWorld(const std::string& robot_name,
-									const std::string& link_name = "") const;
+							const std::string& link_name = "") const;
 
 	bool objectExistsInWorld(const std::string& object_name) const;
 
@@ -309,6 +339,8 @@ public:
 		_world->addChild(box);
 	}
 
+	bool cameraExistsInWorld(const std::string& camera_name) const;
+
 private:
 	void initializeWorld(const std::string& path_to_world_file,
 						 const bool verbose);
@@ -340,10 +372,10 @@ private:
 	 * @param ret_vertical Up vector for the camera.
 	 * @param ret_lookat Point the camera is looking at.
 	 */
-	void getCameraPose(const std::string& camera_name,
-					   Eigen::Vector3d& ret_position,
-					   Eigen::Vector3d& ret_vertical,
-					   Eigen::Vector3d& ret_lookat);
+	void getCameraPoseInternal(const std::string& camera_name,
+							   Eigen::Vector3d& ret_position,
+							   Eigen::Vector3d& ret_vertical,
+							   Eigen::Vector3d& ret_lookat);
 
 	/**
 	 * @brief Sets the pose of the camera in the parent frame
@@ -352,10 +384,10 @@ private:
 	 * @param vertical Up vector for the camera.
 	 * @param lookat Point the camera is to look at.
 	 */
-	void setCameraPose(const std::string& camera_name,
-					   const Eigen::Vector3d& position,
-					   const Eigen::Vector3d& vertical,
-					   const Eigen::Vector3d& lookat);
+	void setCameraPoseInternal(const std::string& camera_name,
+							   const Eigen::Vector3d& position,
+							   const Eigen::Vector3d& vertical,
+							   const Eigen::Vector3d& lookat);
 
 	/* CHAI specific interface */
 	// /**
@@ -421,6 +453,7 @@ private:
 	 *
 	 */
 	std::vector<std::string> _camera_names;
+	std::map<std::string, std::shared_ptr<CameraLinkAttachment>> _camera_link_attachments;
 	int _current_camera_index;
 
 	/**
