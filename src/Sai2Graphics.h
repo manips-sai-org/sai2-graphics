@@ -206,7 +206,8 @@ public:
 
 	bool modelExistsInWorld(const std::string& model_name) const {
 		return robotExistsInWorld(model_name) ||
-			   objectExistsInWorld(model_name);
+			   dynamicObjectExistsInWorld(model_name) ||
+			   staticObjectExistsInWorld(model_name);
 	}
 
 	bool robotExistsInWorld(const std::string& robot_name,
@@ -214,8 +215,6 @@ public:
 
 	bool dynamicObjectExistsInWorld(const std::string& object_name) const;
 	bool staticObjectExistsInWorld(const std::string& object_name) const;
-
-	bool cameraExistsInWorld(const std::string& camera_name) const;
 
 	bool cameraExistsInWorld(const std::string& camera_name) const;
 
@@ -320,7 +319,8 @@ private:
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _dyn_objects_pose;
 	std::map<std::string, std::shared_ptr<Eigen::Vector6d>> _object_velocities;
 
-	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _static_objects_pose;
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>
+		_static_objects_pose;
 
 	/**
 	 * @brief force sensor displays
@@ -333,7 +333,8 @@ private:
 	 *
 	 */
 	std::vector<std::string> _camera_names;
-	std::map<std::string, std::shared_ptr<CameraLinkAttachment>> _camera_link_attachments;
+	std::map<std::string, std::shared_ptr<CameraLinkAttachment>>
+		_camera_link_attachments;
 	int _current_camera_index;
 
 	/**
