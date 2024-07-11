@@ -204,15 +204,11 @@ public:
 							 const string robot_or_object_name,
 							 const string link_name = "");
 
-	bool modelExistsInWorld(const std::string& model_name) const {
-		return robotExistsInWorld(model_name) ||
-			   objectExistsInWorld(model_name);
-	}
-
 	bool robotExistsInWorld(const std::string& robot_name,
 							const std::string& link_name = "") const;
 
-	bool objectExistsInWorld(const std::string& object_name) const;
+	bool dynamicObjectExistsInWorld(const std::string& object_name) const;
+	bool staticObjectExistsInWorld(const std::string& object_name) const;
 
 	bool cameraExistsInWorld(const std::string& camera_name) const;
 
@@ -314,8 +310,10 @@ private:
 	std::map<std::string, std::string> _robot_filenames;
 	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
 
-	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _object_poses;
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _dyn_objects_pose;
 	std::map<std::string, std::shared_ptr<Eigen::Vector6d>> _object_velocities;
+
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _static_objects_pose;
 
 	/**
 	 * @brief force sensor displays
