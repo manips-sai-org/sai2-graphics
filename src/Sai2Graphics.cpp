@@ -194,9 +194,9 @@ void Sai2Graphics::resetWorld(const std::string& path_to_world_file,
 void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 								   const bool verbose) {
 	_world = new chai3d::cWorld();
-	Parser::UrdfToSai2GraphicsWorld(path_to_world_file, _world,
-									_robot_filenames, _object_poses,
-									_camera_names, verbose);
+	Parser::UrdfToSai2GraphicsWorld(
+		path_to_world_file, _world, _robot_filenames, _dyn_objects_pose,
+		_static_objects_pose, _camera_names, verbose);
 	_current_camera_index = 0;
 	for (auto robot_filename : _robot_filenames) {
 		// get robot base object in chai world
@@ -219,7 +219,7 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 		updateRobotGraphics(robot_filename.first,
 							_robot_models[robot_filename.first]->q());
 	}
-	for (auto object_pose : _object_poses) {
+	for (auto object_pose : _dyn_objects_pose) {
 		_object_velocities[object_pose.first] =
 			std::make_shared<Eigen::Vector6d>(Eigen::Vector6d::Zero());
 	}
@@ -230,7 +230,8 @@ void Sai2Graphics::clearWorld() {
 	delete _world;
 	_robot_filenames.clear();
 	_robot_models.clear();
-	_object_poses.clear();
+	_dyn_objects_pose.clear();
+	_static_objects_pose.clear();
 	_object_velocities.clear();
 	_camera_names.clear();
 	_force_sensor_displays.clear();
@@ -323,9 +324,11 @@ void Sai2Graphics::attachCameraToObject(const std::string& camera_name,
 			 << endl;
 		return;
 	}
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name) &&
+		!staticObjectExistsInWorld(object_name)) {
 		cout << "WARNING: object [" << object_name
-			 << "] not found in graphics world, cannot attach a camera to it"
+			 << "] object not found in graphics world, cannot attach a camera "
+				"to it"
 			 << endl;
 		return;
 	}
@@ -359,35 +362,46 @@ void Sai2Graphics::detachCameraFromRobotOrObject(
 
 void Sai2Graphics::addForceSensorDisplay(
 	const Sai2Model::ForceSensorData& sensor_data) {
-	if (!robotExistsInWorld(sensor_data.robot_name, sensor_data.link_name)) {
-		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
-					 "unexisting robot or link in "
-					 "Sai2Simulation::addForceSensorDisplay\n"
-				  << std::endl;
-		return;
-	}
-	if (findForceSensorDisplay(sensor_data.robot_name, sensor_data.link_name) !=
-		-1) {
+	if (findForceSensorDisplay(sensor_data.robot_or_object_name,
+							   sensor_data.link_name) != -1) {
 		std::cout << "\n\nWARNING: only one force sensor is supported per "
 					 "link in Sai2Graphics::addForceSensorDisplay. Not "
 					 "adding the second one\n"
 				  << std::endl;
 		return;
 	}
-	_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
-		sensor_data.robot_name, sensor_data.link_name,
-		sensor_data.transform_in_link, _robot_models[sensor_data.robot_name],
-		_world));
+	if (robotExistsInWorld(sensor_data.robot_or_object_name,
+						   sensor_data.link_name)) {
+		_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
+			sensor_data.robot_or_object_name, sensor_data.link_name,
+			sensor_data.transform_in_link,
+			_robot_models.at(sensor_data.robot_or_object_name), _world));
+	} else if (dynamicObjectExistsInWorld(sensor_data.robot_or_object_name)) {
+		_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
+			sensor_data.robot_or_object_name, sensor_data.link_name,
+			sensor_data.transform_in_link,
+			_dyn_objects_pose.at(sensor_data.robot_or_object_name), _world));
+	} else if (staticObjectExistsInWorld(sensor_data.robot_or_object_name)) {
+		_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
+			sensor_data.robot_or_object_name, sensor_data.link_name,
+			sensor_data.transform_in_link,
+			_static_objects_pose.at(sensor_data.robot_or_object_name), _world));
+	} else {
+		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
+					 "unexisting robot or link in "
+					 "Sai2Simulation::addForceSensorDisplay\n"
+				  << std::endl;
+	}
 }
 
 void Sai2Graphics::updateDisplayedForceSensor(
 	const Sai2Model::ForceSensorData& force_data) {
-	int sensor_index =
-		findForceSensorDisplay(force_data.robot_name, force_data.link_name);
+	int sensor_index = findForceSensorDisplay(force_data.robot_or_object_name,
+											  force_data.link_name);
 	if (sensor_index == -1) {
 		throw std::invalid_argument(
-			"no force sensor on robot " + force_data.robot_name + " on link " +
-			force_data.link_name +
+			"no force sensor on robot " + force_data.robot_or_object_name +
+			" on link " + force_data.link_name +
 			". Impossible to update the displayed force in graphics world");
 		return;
 	}
@@ -416,9 +430,19 @@ bool Sai2Graphics::robotExistsInWorld(const std::string& robot_name,
 	return true;
 }
 
-bool Sai2Graphics::objectExistsInWorld(const std::string& object_name) const {
-	auto it = _object_poses.find(object_name);
-	if (it == _object_poses.end()) {
+bool Sai2Graphics::dynamicObjectExistsInWorld(
+	const std::string& object_name) const {
+	auto it = _dyn_objects_pose.find(object_name);
+	if (it == _dyn_objects_pose.end()) {
+		return false;
+	}
+	return true;
+}
+
+bool Sai2Graphics::staticObjectExistsInWorld(
+	const std::string& object_name) const {
+	auto it = _static_objects_pose.find(object_name);
+	if (it == _static_objects_pose.end()) {
 		return false;
 	}
 	return true;
@@ -433,10 +457,12 @@ bool Sai2Graphics::cameraExistsInWorld(const std::string& camera_name) const {
 	return false;
 }
 
-int Sai2Graphics::findForceSensorDisplay(const std::string& robot_name,
-										 const std::string& link_name) const {
+int Sai2Graphics::findForceSensorDisplay(
+	const std::string& robot_or_object_name,
+	const std::string& link_name) const {
 	for (int i = 0; i < _force_sensor_displays.size(); ++i) {
-		if (_force_sensor_displays.at(i)->robot_name() == robot_name &&
+		if (_force_sensor_displays.at(i)->robot_or_object_name() ==
+				robot_or_object_name &&
 			_force_sensor_displays.at(i)->link_name() == link_name) {
 			return i;
 		}
@@ -448,10 +474,11 @@ void Sai2Graphics::addUIForceInteraction(
 	const std::string& robot_or_object_name,
 	const bool interact_at_object_center) {
 	bool is_robot = robotExistsInWorld(robot_or_object_name);
-	bool is_object = objectExistsInWorld(robot_or_object_name);
+	bool is_object = dynamicObjectExistsInWorld(robot_or_object_name);
 	if (!is_robot && !is_object) {
 		throw std::invalid_argument(
-			"robot or object not found in Sai2Graphics::addUIForceInteraction");
+			"robot or dynamic object not found in "
+			"Sai2Graphics::addUIForceInteraction");
 	}
 	for (auto widget : _ui_force_widgets) {
 		if (robot_or_object_name == widget->getRobotOrObjectName()) {
@@ -467,7 +494,7 @@ void Sai2Graphics::addUIForceInteraction(
 	} else {
 		_ui_force_widgets.push_back(std::make_shared<UIForceWidget>(
 			robot_or_object_name, interact_at_object_center,
-			_object_poses[robot_or_object_name],
+			_dyn_objects_pose[robot_or_object_name],
 			_object_velocities[robot_or_object_name], display_line));
 	}
 }
@@ -475,10 +502,10 @@ void Sai2Graphics::addUIForceInteraction(
 Eigen::VectorXd Sai2Graphics::getUITorques(
 	const std::string& robot_or_object_name) {
 	bool is_robot = robotExistsInWorld(robot_or_object_name);
-	bool is_object = objectExistsInWorld(robot_or_object_name);
+	bool is_object = dynamicObjectExistsInWorld(robot_or_object_name);
 	if (!is_robot && !is_object) {
 		throw std::invalid_argument(
-			"robot or object not found in Sai2Graphics::getUITorques");
+			"robot or dynamic object not found in Sai2Graphics::getUITorques");
 	}
 	for (auto widget : _ui_force_widgets) {
 		if (robot_or_object_name == widget->getRobotOrObjectName()) {
@@ -500,7 +527,7 @@ const std::vector<std::string> Sai2Graphics::getRobotNames() const {
 
 const std::vector<std::string> Sai2Graphics::getObjectNames() const {
 	std::vector<std::string> object_names;
-	for (const auto& it : _object_poses) {
+	for (const auto& it : _dyn_objects_pose) {
 		object_names.push_back(it.first);
 	}
 	return object_names;
@@ -659,10 +686,14 @@ void Sai2Graphics::renderGraphicsWorld() {
 
 		if (consume_first_press(SHOW_CAMERA_POS_KEY)) {
 			cout << endl;
-			cout << "camera position : " << camera_pos.transpose() << endl;
-			cout << "camera lookat point : " << camera_lookat_point.transpose()
+			cout << "<camera name=\"" << camera_name << "\">" << endl;
+			cout << "	<position xyz=\"" << camera_pos.transpose() << "\" />"
 				 << endl;
-			cout << "camera up axis : " << camera_up_axis.transpose() << endl;
+			cout << "	<lookat xyz=\"" << camera_lookat_point.transpose()
+				 << "\" />" << endl;
+			cout << "	<vertical xyz=\"" << camera_up_axis.transpose()
+				 << "\" />" << endl;
+			cout << "</camera>" << endl;
 			cout << endl;
 		}
 	}
@@ -673,7 +704,7 @@ void Sai2Graphics::renderGraphicsWorld() {
 
 	// if camera is attached to a robot link or object, override the pose
 	if (_camera_link_attachments.find(camera_name) !=
-			_camera_link_attachments.end()) {
+		_camera_link_attachments.end()) {
 		const auto attachment = _camera_link_attachments.at(camera_name);
 
 		Affine3d camera_pose;
@@ -808,9 +839,9 @@ void Sai2Graphics::updateRobotGraphics(
 void Sai2Graphics::updateObjectGraphics(
 	const std::string& object_name, const Eigen::Affine3d& object_pose,
 	const Eigen::Vector6d& object_velocity) {
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
-			"object not found in Sai2Graphics::updateObjectGraphics");
+			"dynamic object not found in Sai2Graphics::updateObjectGraphics");
 	}
 	cGenericObject* object = NULL;
 	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
@@ -829,7 +860,7 @@ void Sai2Graphics::updateObjectGraphics(
 	}
 
 	// update pose
-	*_object_poses.at(object_name) = object_pose;
+	*_dyn_objects_pose.at(object_name) = object_pose;
 	*_object_velocities.at(object_name) = object_velocity;
 	object->setLocalPos(object_pose.translation());
 	object->setLocalRot(object_pose.rotation());
@@ -845,11 +876,11 @@ Eigen::VectorXd Sai2Graphics::getRobotJointPos(const std::string& robot_name) {
 }
 
 Eigen::Affine3d Sai2Graphics::getObjectPose(const std::string& object_name) {
-	if (!objectExistsInWorld(object_name)) {
+	if (!dynamicObjectExistsInWorld(object_name)) {
 		throw std::invalid_argument(
-			"object not found in Sai2Graphics::getObjectPose");
+			"dynamic object not found in Sai2Graphics::getObjectPose");
 	}
-	return *_object_poses.at(object_name);
+	return *_dyn_objects_pose.at(object_name);
 }
 
 void Sai2Graphics::render(const std::string& camera_name) {

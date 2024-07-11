@@ -26,7 +26,9 @@ namespace Parser {
 void UrdfToSai2GraphicsWorld(
 	const std::string& filename, chai3d::cWorld* world,
 	std::map<std::string, std::string>& robot_filenames,
-	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& object_poses,
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& dyn_object_poses,
+	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>&
+		static_object_poses,
 	std::vector<std::string>& camera_names, bool verbose);
 
 /**

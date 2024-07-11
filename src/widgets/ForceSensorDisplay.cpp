@@ -7,9 +7,25 @@ ForceSensorDisplay::ForceSensorDisplay(
 	const Eigen::Affine3d T_link_sensor,
 	std::shared_ptr<Sai2Model::Sai2Model> robot, chai3d::cWorld* chai_world)
 	: _robot(robot),
-	  _robot_name(robot_name),
+	  _robot_or_object_name(robot_name),
 	  _link_name(link_name),
 	  _T_link_sensor(T_link_sensor) {
+	initializeLines(chai_world);
+}
+
+ForceSensorDisplay::ForceSensorDisplay(const std::string& object_name,
+									   const std::string& link_name,
+									   const Eigen::Affine3d T_link_sensor,
+									   std::shared_ptr<Affine3d> object_pose,
+									   chai3d::cWorld* chai_world)
+	: _object_pose(object_pose),
+	  _robot_or_object_name(object_name),
+	  _link_name(link_name),
+	  _T_link_sensor(T_link_sensor) {
+	initializeLines(chai_world);
+}
+
+void ForceSensorDisplay::initializeLines(chai3d::cWorld* chai_world) {
 	// initialize display lines
 	_display_line_force = new chai3d::cShapeLine();
 	_display_line_force->setShowEnabled(false);
@@ -32,8 +48,13 @@ ForceSensorDisplay::ForceSensorDisplay(
 
 void ForceSensorDisplay::update(const Eigen::Vector3d& force_global_frame,
 								const Eigen::Vector3d& moment_global_frame) {
-	Eigen::Vector3d epointA =
-		_robot->positionInWorld(_link_name, _T_link_sensor.translation());
+	Eigen::Vector3d epointA;
+	if (_robot) {
+		epointA =
+			_robot->positionInWorld(_link_name, _T_link_sensor.translation());
+	} else {
+		epointA = *_object_pose * _T_link_sensor.translation();
+	}
 
 	// force:
 	_display_line_force->m_pointA = chai3d::cVector3d(epointA);
