@@ -324,6 +324,119 @@ void Sai2Graphics::attachCameraToObject(const std::string& camera_name,
 			 << endl;
 		return;
 	}
+	if (!dynamicObjectExistsInWorld(object_name) &&
+		!staticObjectExistsInWorld(object_name)) {
+		cout << "WARNING: object [" << object_name
+			 << "] object not found in graphics world, cannot attach a camera "
+				"to it"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) !=
+		_camera_link_attachments.end()) {
+		cout << "camera [" << camera_name
+			 << "] already attached to a robot or object. detach first" << endl;
+		return;
+	}
+	_camera_link_attachments[camera_name] =
+		std::make_shared<CameraLinkAttachment>(object_name, "", pose_in_object);
+}
+
+void Sai2Graphics::detachCameraFromRobotOrObject(
+	const std::string& camera_name) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: camera [" << camera_name
+			 << "] not found in graphics world, cannot detach from robot or "
+				"object"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) ==
+		_camera_link_attachments.end()) {
+		cout << "camera [" << camera_name
+			 << "] not attached to any object or robot" << endl;
+		return;
+	}
+	_camera_link_attachments.erase(camera_name);
+}
+
+void Sai2Graphics::addForceSensorDisplay(
+	const Sai2Model::ForceSensorData& sensor_data) {
+	if (!robotExistsInWorld(sensor_data.robot_name, sensor_data.link_name)) {
+		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
+					 "unexisting robot or link in "
+					 "Sai2Simulation::addForceSensorDisplay\n"
+				  << std::endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) ==
+		_camera_link_attachments.end()) {
+		cout << "WARNING: Cannot set pose for camera [" << camera_name
+			 << "] attached to a robot or object" << endl;
+		return;
+	}
+	Vector3d pos = camera_pose.translation();
+	Vector3d up = -camera_pose.rotation().col(1);
+	Vector3d lookat = pos + camera_pose.linear().col(2);
+	setCameraPoseInternal(camera_name, pos, up, lookat);
+}
+
+Eigen::Affine3d Sai2Graphics::getCameraPose(const std::string& camera_name) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: Camera [" << camera_name
+			 << "] does not exists in the graphics world. Cannot get pose"
+			 << endl;
+		return Affine3d::Identity();
+	}
+	Vector3d pos, up, lookat;
+	getCameraPoseInternal(camera_name, pos, up, lookat);
+
+	Matrix3d rotation = Matrix3d::Identity();
+	rotation.col(1) = -up;
+	rotation.col(2) = (lookat - pos).normalized();
+	rotation.col(0) = rotation.col(1).cross(rotation.col(2));
+
+	Affine3d camera_pose = Affine3d(rotation);
+	camera_pose.translation() = pos;
+
+	return camera_pose;
+}
+
+void Sai2Graphics::attachCameraToRobotLink(
+	const std::string& camera_name, const std::string& robot_name,
+	const std::string& link_name, const Eigen::Affine3d& pose_in_link) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: camera [" << camera_name
+			 << "] not found in graphics world, cannot attach to robot link"
+			 << endl;
+		return;
+	}
+	if (!robotExistsInWorld(robot_name, link_name)) {
+		cout << "WARNING: robot [" << robot_name << "] link [" << link_name
+			 << "] not found in graphics world, cannot attach a camera to it"
+			 << endl;
+		return;
+	}
+	if (_camera_link_attachments.find(camera_name) !=
+		_camera_link_attachments.end()) {
+		cout << "camera [" << camera_name
+			 << "] already attached to a robot or object. detach first" << endl;
+		return;
+	}
+	_camera_link_attachments[camera_name] =
+		std::make_shared<CameraLinkAttachment>(robot_name, link_name,
+											   pose_in_link);
+}
+
+void Sai2Graphics::attachCameraToObject(const std::string& camera_name,
+										const std::string& object_name,
+										const Eigen::Affine3d& pose_in_object) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: camera [" << camera_name
+			 << "] not found in graphics world, cannot attach to object"
+			 << endl;
+		return;
+	}
 	if (!dynamicObjectExistsInWorld(object_name)) {
 		cout << "WARNING: dynamic object [" << object_name
 			 << "] not found in graphics world, cannot attach a camera to it"

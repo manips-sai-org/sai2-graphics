@@ -204,11 +204,18 @@ public:
 							 const string robot_or_object_name,
 							 const string link_name = "");
 
+	bool modelExistsInWorld(const std::string& model_name) const {
+		return robotExistsInWorld(model_name) ||
+			   objectExistsInWorld(model_name);
+	}
+
 	bool robotExistsInWorld(const std::string& robot_name,
 							const std::string& link_name = "") const;
 
 	bool dynamicObjectExistsInWorld(const std::string& object_name) const;
 	bool staticObjectExistsInWorld(const std::string& object_name) const;
+
+	bool cameraExistsInWorld(const std::string& camera_name) const;
 
 	bool cameraExistsInWorld(const std::string& camera_name) const;
 
