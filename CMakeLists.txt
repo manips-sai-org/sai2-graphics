@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 project(SAI2-GRAPHICS)
 set(PROJECT_VERSION 0.1.0)
 
+option(BUILD_EXAMPLES "Build examples" ON)
+
 set(CMAKE_CXX_FLAGS "-std=c++11 -I/usr/include -I/usr/local/include -fPIC")
 if(${CMAKE_SYSTEM_NAME} MATCHES Darwin)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
@@ -90,4 +92,6 @@ write_basic_package_version_file(
   COMPATIBILITY SameMajorVersion)
 
 # add examples
-add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
+if(BUILD_EXAMPLES)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/examples)
+endif()
