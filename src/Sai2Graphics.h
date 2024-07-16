@@ -68,6 +68,8 @@ public:
 	 */
 	bool isWindowOpen() { return !glfwWindowShouldClose(_window); }
 
+	void renderBlackScreen();
+
 	/**
 	 * @brief renders the graphics world from the current camera (needs to be
 	 * called after all the update functions i.e. updateRobotGraphics)

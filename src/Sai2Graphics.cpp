@@ -533,6 +533,13 @@ const std::vector<std::string> Sai2Graphics::getObjectNames() const {
 	return object_names;
 }
 
+void Sai2Graphics::renderBlackScreen() {
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glfwSwapBuffers(_window);
+        glfwPollEvents();	
+}
+
 void Sai2Graphics::renderGraphicsWorld() {
 	// swap camera if needed
 	if (consume_first_press(NEXT_CAMERA_KEY)) {
