@@ -237,6 +237,7 @@ void Sai2Graphics::clearWorld() {
 	_static_objects_pose.clear();
 	_object_velocities.clear();
 	_camera_names.clear();
+	_camera_frame_buffers.clear();
 	_force_sensor_displays.clear();
 	_ui_force_widgets.clear();
 	_camera_link_attachments.clear();
