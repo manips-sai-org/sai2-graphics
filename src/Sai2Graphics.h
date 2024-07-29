@@ -78,6 +78,10 @@ public:
 	 */
 	void renderGraphicsWorld();
 
+	chai3d::cImagePtr getCameraImage(const std::string& camera_name,
+									 const int width = 720,
+									 const int height = 480);
+
 	/**
 	 * @brief remove all interactions widgets
 	 * after calling that function, right clicking on the window won't
@@ -335,6 +339,7 @@ private:
 	 *
 	 */
 	std::vector<std::string> _camera_names;
+	std::map<std::string, chai3d::cFrameBufferPtr> _camera_frame_buffers;
 	std::map<std::string, std::shared_ptr<CameraLinkAttachment>>
 		_camera_link_attachments;
 	int _current_camera_index;
