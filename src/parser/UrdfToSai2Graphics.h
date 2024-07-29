@@ -29,7 +29,7 @@ void UrdfToSai2GraphicsWorld(
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& dyn_object_poses,
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>&
 		static_object_poses,
-	std::vector<std::string>& camera_names, bool verbose);
+	std::map<std::string, chai3d::cFrameBufferPtr>& camera_frame_buffers, bool verbose);
 
 /**
  * @brief Parse a URDF file and populate a single chai3d robot model from it.

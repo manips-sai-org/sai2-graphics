@@ -196,8 +196,11 @@ void Sai2Graphics::initializeWorld(const std::string& path_to_world_file,
 	_world = new chai3d::cWorld();
 	Parser::UrdfToSai2GraphicsWorld(
 		path_to_world_file, _world, _robot_filenames, _dyn_objects_pose,
-		_static_objects_pose, _camera_names, verbose);
+		_static_objects_pose, _camera_frame_buffers, verbose);
 	_current_camera_index = 0;
+	for (auto it : _camera_frame_buffers) {
+		_camera_names.push_back(it.first);
+	}
 	for (auto robot_filename : _robot_filenames) {
 		// get robot base object in chai world
 		cRobotBase* base = NULL;
@@ -534,10 +537,27 @@ const std::vector<std::string> Sai2Graphics::getObjectNames() const {
 }
 
 void Sai2Graphics::renderBlackScreen() {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glfwSwapBuffers(_window);
-        glfwPollEvents();	
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glfwSwapBuffers(_window);
+	glfwPollEvents();
+}
+
+cImagePtr Sai2Graphics::getCameraImage(const std::string& camera_name,
+									   const int width, const int height) {
+	if (!cameraExistsInWorld(camera_name)) {
+		cout << "WARNING: Camera [" << camera_name
+			 << "] does not exists in the graphics world. Cannot get image"
+			 << endl;
+		return cImage::create();
+	}
+
+	_world->updateShadowMaps();
+	_camera_frame_buffers.at(camera_name)->setSize(width, height);
+	_camera_frame_buffers.at(camera_name)->renderView();
+	cImagePtr image = cImage::create();
+	_camera_frame_buffers.at(camera_name)->copyImageBuffer(image);
+	return image;
 }
 
 void Sai2Graphics::renderGraphicsWorld() {
@@ -931,24 +951,11 @@ void Sai2Graphics::setCameraPoseInternal(const std::string& camera_name,
 
 // get camera object
 cCamera* Sai2Graphics::getCamera(const std::string& camera_name) {
-	cCamera* camera;
-	// find camera among children
-	// TODO: this can be optimized by locally storing list of cameras
-	for (unsigned int i = 0; i < _world->getNumChildren(); ++i) {
-		cGenericObject* child = _world->getChild(i);
-		if (camera_name == child->m_name) {
-			camera = dynamic_cast<cCamera*>(child);
-			if (camera) {
-				break;
-			}
-		}
+	if (!cameraExistsInWorld(camera_name)) {
+		throw std::invalid_argument(
+			"camera not found in Sai2Graphics::getCamera");
 	}
-	if (!camera) {
-		cerr << "Could not find camera named " << camera_name << endl;
-		abort();
-		// TODO: throw exception instead
-	}
-	return camera;
+	return _camera_frame_buffers.at(camera_name)->getCamera();
 }
 
 cRobotLink* Sai2Graphics::findLinkObjectInParentLinkRecursive(

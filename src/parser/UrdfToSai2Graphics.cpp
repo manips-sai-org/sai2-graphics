@@ -222,7 +222,7 @@ void UrdfToSai2GraphicsWorld(
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& dyn_object_poses,
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>&
 		static_object_poses,
-	std::vector<std::string>& camera_names, bool verbose) {
+	std::map<std::string, cFrameBufferPtr>& camera_frame_buffers, bool verbose) {
 	// load world urdf file
 	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
 	ifstream model_file(resolved_filename);
@@ -295,16 +295,17 @@ void UrdfToSai2GraphicsWorld(
 	// parse cameras
 	for (const auto camera_pair : urdf_world->graphics_.cameras) {
 		const auto camera_ptr = camera_pair.second;
-		auto it = std::find(camera_names.begin(), camera_names.end(),
-							camera_ptr->name);
-		if (it != camera_names.end()) {
+		auto it = camera_frame_buffers.find(camera_ptr->name);
+		if (it != camera_frame_buffers.end()) {
 			throw std::runtime_error(
 				"Different cameras cannot have the same name in the world");
 		}
-		camera_names.push_back(camera_ptr->name);
 
 		// initialize a chai camera
 		cCamera* camera = new cCamera(world);
+		cFrameBufferPtr fb = cFrameBuffer::create();
+		fb->setup(camera);
+		camera_frame_buffers[camera_ptr->name] = fb;
 		// TODO: support link mounted camera
 		// name camera
 		camera->m_name = camera_ptr->name;
