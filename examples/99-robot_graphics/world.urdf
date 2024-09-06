@@ -2,8 +2,8 @@
 
 <world name="demo_world" gravity="0.0 0.0 0.0">
 
-	<robot name="panda_arm">
-		<model dir="./resources" path="panda_arm.urdf" name="panda_arm" />
+	<robot name="HRP4C">
+		<model dir="./resources" path="HRP4c.urdf" name="HRP4C" />
 	</robot>
 
 	<static_object name="Floor">

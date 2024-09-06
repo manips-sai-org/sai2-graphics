@@ -22,7 +22,7 @@ int main() {
 
 	// create force data and force display
 	Sai2Model::ForceSensorData force_data = Sai2Model::ForceSensorData();
-	force_data.robot_name = "PBot";
+	force_data.robot_or_object_name = "PBot";
 	force_data.link_name = "cube_link";
 	graphics->addForceSensorDisplay(force_data);
 

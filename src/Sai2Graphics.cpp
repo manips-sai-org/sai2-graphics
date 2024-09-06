@@ -364,14 +364,14 @@ void Sai2Graphics::detachCameraFromRobotOrObject(
 
 void Sai2Graphics::addForceSensorDisplay(
 	const Sai2Model::ForceSensorData& sensor_data) {
-	if (!robotExistsInWorld(sensor_data.robot_name, sensor_data.link_name)) {
+	if (!robotExistsInWorld(sensor_data.robot_or_object_name, sensor_data.link_name)) {
 		std::cout << "\n\nWARNING: trying to add a force sensor display to an "
 					 "unexisting robot or link in "
 					 "Sai2Simulation::addForceSensorDisplay\n"
 				  << std::endl;
 		return;
 	}
-	if (findForceSensorDisplay(sensor_data.robot_name, sensor_data.link_name) !=
+	if (findForceSensorDisplay(sensor_data.robot_or_object_name, sensor_data.link_name) !=
 		-1) {
 		std::cout << "\n\nWARNING: only one force sensor is supported per "
 					 "link in Sai2Graphics::addForceSensorDisplay. Not "
@@ -380,18 +380,18 @@ void Sai2Graphics::addForceSensorDisplay(
 		return;
 	}
 	_force_sensor_displays.push_back(std::make_shared<ForceSensorDisplay>(
-		sensor_data.robot_name, sensor_data.link_name,
-		sensor_data.transform_in_link, _robot_models[sensor_data.robot_name],
+		sensor_data.robot_or_object_name, sensor_data.link_name,
+		sensor_data.transform_in_link, _robot_models[sensor_data.robot_or_object_name],
 		_world));
 }
 
 void Sai2Graphics::updateDisplayedForceSensor(
 	const Sai2Model::ForceSensorData& force_data) {
 	int sensor_index =
-		findForceSensorDisplay(force_data.robot_name, force_data.link_name);
+		findForceSensorDisplay(force_data.robot_or_object_name, force_data.link_name);
 	if (sensor_index == -1) {
 		throw std::invalid_argument(
-			"no force sensor on robot " + force_data.robot_name + " on link " +
+			"no force sensor on robot " + force_data.robot_or_object_name + " on link " +
 			force_data.link_name +
 			". Impossible to update the displayed force in graphics world");
 		return;
