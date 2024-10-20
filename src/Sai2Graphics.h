@@ -339,7 +339,29 @@ public:
 		_world->addChild(box);
 	}
 
+	/**
+	 * @brief Sets the clipping plane of the camera
+	 * 
+	 * @param camera_name 
+	 * @param min_distance 
+	 * @param max_distance 
+	 */
+	void setClippingPlanes(const std::string& camera_name,
+						  const double& min_distance,
+						  const double& max_distance) {	
+		getCamera(camera_name)->setClippingPlanes(min_distance, max_distance);
+	}
+
 	bool cameraExistsInWorld(const std::string& camera_name) const;
+
+	/**
+	 * @brief Internal cWorld object.
+	 */
+	chai3d::cWorld* _world;
+
+	void setMirrorHorizontal(const std::string& camera_name, bool flag) {
+		getCamera(camera_name)->setMirrorHorizontal(flag);
+	}
 
 private:
 	void initializeWorld(const std::string& path_to_world_file,
@@ -411,10 +433,10 @@ private:
 	int findForceSensorDisplay(const std::string& robot_or_object_name,
 							   const std::string& link_name) const;
 
-	/**
-	 * @brief Internal cWorld object.
-	 */
-	chai3d::cWorld* _world;
+	// /**
+	//  * @brief Internal cWorld object.
+	//  */
+	// chai3d::cWorld* _world;
 
 	/**
 	 * @brief glfw window

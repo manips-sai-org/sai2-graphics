@@ -2,11 +2,15 @@
 
 <world name="demo_world" gravity="0.0 0.0 0.0">
 
-	<robot name="HRP4C">
-		<model dir="./resources" path="HRP4c.urdf" name="HRP4C" />
+	<robot name="HRP4c">
+		<model dir="./resources" path="HRP4c_modified.urdf" name="HRP4c" />
 	</robot>
+	
+	<!-- <robot name="anymal">
+		<model dir="./resources" path="anymal.urdf" name="anymal" />
+	</robot> -->
 
-	<static_object name="Floor">
+	<!-- <static_object name="Floor">
 		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 	    <visual>
 	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
@@ -17,9 +21,9 @@
 		        <color rgba="0.1 0.1 0.1 1.0" />
 	        </material>
 	    </visual>
-	</static_object>
+	</static_object> -->
 
-	<static_object name="box">
+	<!-- <static_object name="box">
 		<origin xyz="0.2 0.0 0.05" rpy="0 0 0" />
 	    <visual>
 	        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
@@ -30,7 +34,7 @@
 		        <color rgba="1 0 0 1.0" />
 	        </material>
 	    </visual>
-	</static_object>
+	</static_object> -->
 
 	<light name="light1" type="directional">
 		<position xyz="2.0 -2.0 2.0" />

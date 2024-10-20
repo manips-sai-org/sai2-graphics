@@ -4,16 +4,22 @@
 #include <mutex>
 
 #include "Sai2Graphics.h"
+#include "redis/RedisClient.h"
+#include "redis_keys.h"
 
 using namespace std;
 
 const string world_file = "resources/world.urdf";
 const string robot_name = "HRP4c";
+// const string robot_name = "anymal";
 const string camera_name = "camera";
 using Vector7d = Eigen::Matrix<double, 7, 1>;
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
+
+	auto redis_client = Sai2Common::RedisClient();
+	redis_client.connect();
 
     // Vector7d q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14, q15;
 	// q0 << 0, 0, 0, -90, 0, 90, 0;  // initial configuration 
@@ -46,6 +52,7 @@ int main() {
     // camera_on_robot_pose.translation() = Vector3d(0.066, 0, 0.107 + 0.030);
     // camera_on_robot_pose.linear() = AngleAxisd(-M_PI / 2, Vector3d::UnitZ()).toRotationMatrix();
     // graphics->setCameraFov(camera_name, 65 * M_PI / 180);
+	graphics->setBackgroundColor(66.0/255, 135.0/255, 245.0/255);  // set blue background 	
 
     // graphics->updateRobotGraphics(robot_name, calib_config[0]);
 
@@ -65,7 +72,7 @@ int main() {
 
 		// update graphics robot and object poses in graphics and render
         if (counter % 10 == 0) {
-            // graphics->updateRobotGraphics(robot_name, calib_config[cnt++]);
+            graphics->updateRobotGraphics(robot_name, redis_client.getEigen(JOINT_ANGLES_KEY));
         }
         graphics->renderGraphicsWorld();
 		counter++;

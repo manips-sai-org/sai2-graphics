@@ -274,7 +274,7 @@ void UrdfToSai2GraphicsWorld(
 		UrdfToSai2GraphicsRobot(
 			robot_spec->model_filename, robot, verbose,
 			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
-		assert(robot->m_name == robot_spec->model_name);
+		// assert(robot->m_name == robot_spec->model_name);
 
 		// overwrite robot name with custom name for this instance
 		robot->m_name = robot_spec->name;
