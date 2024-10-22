@@ -62,9 +62,6 @@ public:
 
 	/**
 	 * @brief returns true is the window is open and should stay open
-	 *
-	 * @return true
-	 * @return false
 	 */
 	bool isWindowOpen() { return !glfwWindowShouldClose(_window); }
 
@@ -73,11 +70,18 @@ public:
 	/**
 	 * @brief renders the graphics world from the current camera (needs to be
 	 * called after all the update functions i.e. updateRobotGraphics)
-	 *
-	 * @param camera_name the name of the camera to display
 	 */
 	void renderGraphicsWorld();
 
+	/**
+	 * @brief Gets the camera image for any camera in the world (not necessarily
+	 * the current one)
+	 *
+	 * @param camera_name name of the camera
+	 * @param width width of the image in pixels
+	 * @param height height of the image in pixels
+	 * @return chai3d::cImagePtr image from the camera as a chai3d image
+	 */
 	chai3d::cImagePtr getCameraImage(const std::string& camera_name,
 									 const int width = 720,
 									 const int height = 480);
@@ -125,12 +129,23 @@ public:
 
 	/**
 	 * @brief Update the graphics model for a robot in the virtual world.
+	 * Provide the velocities if you want to use the ui interaction widget
+	 * (because they are needed to compute the damping).
 	 * @param robot_name Name of the robot for which model update is considered.
 	 * @param joint_angles joint angles for that robot
+	 * @param joint_velocities joint velocities for that robot
 	 */
 	void updateRobotGraphics(const std::string& robot_name,
 							 const Eigen::VectorXd& joint_angles,
 							 const Eigen::VectorXd& joint_velocities);
+
+	/**
+	 * @brief Update the graphics model for a robot in the virtual world,
+	 * without providing the velocities (if there is a ui interaction widget,
+	 * the damping will be set to 0).
+	 * @param robot_name Name of the robot for which model update is considered.
+	 * @param joint_angles joint angles for that robot
+	 */
 	void updateRobotGraphics(const std::string& robot_name,
 							 const Eigen::VectorXd& joint_angles);
 
@@ -144,8 +159,20 @@ public:
 		const std::string& object_name, const Eigen::Affine3d& object_pose,
 		const Eigen::Vector6d& object_velocity = Eigen::Vector6d::Zero());
 
+	/**
+	 * @brief Get the Joint positions of a given robot in the graphics world
+	 *
+	 * @param robot_name Name of the robot
+	 * @return Eigen::VectorXd Joint positions of the robot
+	 */
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 
+	/**
+	 * @brief Get the pose of an object in the graphics world
+	 *
+	 * @param object_name Name of the object
+	 * @return Eigen::Affine3d Pose of the object
+	 */
 	Eigen::Affine3d getObjectPose(const std::string& object_name);
 
 	/**
@@ -171,57 +198,145 @@ public:
 	void showWireMesh(bool show_wiremesh, const std::string& robot_name,
 					  const std::string& link_name = "");
 
+	/**
+	 * @brief Set the Background color of the world
+	 *
+	 * @param red red component of the color between 0 and 1
+	 * @param green green component of the color between 0 and 1
+	 * @param blue blue component of the color between 0 and 1
+	 */
 	void setBackgroundColor(const double red, const double green,
 							const double blue) {
 		_world->setBackgroundColor(red, green, blue);
 	}
 
+	/// @brief Returns the current camera name.
 	std::string getCurrentCameraName() const {
 		return _camera_names[_current_camera_index];
 	}
 
+	/**
+	 * @brief Sets the pose of a camera. The translation part of the pose is the
+	 * position of the camera, and the rotation part is the orientation of the
+	 * camera with the convention that the Z axis is the camera depth axis and
+	 * the X axis is the right axis in the image (and therefore the image up is
+	 * -Y).
+	 *
+	 * @param camera_name
+	 * @param camera_pose
+	 */
 	void setCameraPose(const std::string& camera_name,
 					   const Eigen::Affine3d& camera_pose);
 
+	/**
+	 * @brief Returns the camera pose for a given camera.
+	 *
+	 * @param camera_name name of the camera
+	 * @return Eigen::Affine3d pose of the camera with the convention X right, Y
+	 * down, Z forward
+	 */
 	Eigen::Affine3d getCameraPose(const std::string& camera_name);
 
 	// convention: Z forward, X right
+
+	/**
+	 * @brief Attach a camera to a robot link such that the camera moves
+	 * automatically with said link. The pose of the camera cannot be set via
+	 * the setCameraPose function (or via the usual ui controls in the
+	 * visualization window) when it is attached to a robot link.
+	 *
+	 * @param camera_name name of the camera to attach
+	 * @param robot_name name of the robot to attach the camera to
+	 * @param link_name name of the link to attach the camera to
+	 * @param pose_in_link pose of the camera in the link frame
+	 */
 	void attachCameraToRobotLink(const std::string& camera_name,
 								 const std::string& robot_name,
 								 const std::string& link_name,
 								 const Eigen::Affine3d& pose_in_link);
 
+	/**
+	 * @brief Attach a camera to an object such that the camera moves
+	 * automatically with said object. The pose of the camera cannot be set via
+	 * the setCameraPose function (or via the usual ui controls in the
+	 * visualization window) when it is attached to an object.
+	 *
+	 * @param camera_name name of the camera to attach
+	 * @param object_name name of the object to attach the camera to
+	 * @param pose_in_object pose of the camera in the object frame
+	 */
 	void attachCameraToObject(const std::string& camera_name,
 							  const std::string& object_name,
 							  const Eigen::Affine3d& pose_in_object);
 
+	/// @brief Detach a camera from a robot or object.
 	void detachCameraFromRobotOrObject(const std::string& camera_name);
 
+	/**
+	 * @brief adds a force sensor display to the graphics world. The force
+	 * sensor data contains the name of robot or object, the link name and the
+	 * pose of the sensor in the link frame. It should come from the simulation.
+	 * Once attached, call the updateDisplayedForceSensor function to update the
+	 * displayed force. A force will show as a green line and a moment as a red
+	 * line.
+	 *
+	 * @param sensor_data force sensor data that contains the name of robot or
+	 * object, the link name and the pose of the sensor in the link frame.
+	 */
 	void addForceSensorDisplay(const Sai2Model::ForceSensorData& sensor_data);
 
+	/**
+	 * @brief updates the displayed force sensor with the new force and moment
+	 * values. The force sensor data contains the informations about the robot
+	 * or object, link name and pose of the sensor in the link frame to know
+	 * which force sensor to update. It also contains the force and moment
+	 * values to display.
+	 *
+	 * @param force_data force sensor data that contains all the necessary info
+	 * and should come from the simulation.
+	 */
 	void updateDisplayedForceSensor(
 		const Sai2Model::ForceSensorData& force_data);
 
+	/// @brief returns true if the given key is pressed, false otherwise
 	bool isKeyPressed(int key) const {
 		return glfwGetKey(_window, key) == GLFW_PRESS;
 	}
 
+	/**
+	 * @brief Enable or disable rendering for a robot or object in the world. Of
+	 * the rendering is disabled, the object will not be displayed in the
+	 * visualizer window.
+	 *
+	 * @param rendering_enabled true to enable rendering, false to disable
+	 * @param robot_or_object_name name of the robot or object
+	 * @param link_name name of the link to render or not. Leave empty to apply to all links.
+	 */
 	void setRenderingEnabled(const bool rendering_enabled,
 							 const string robot_or_object_name,
 							 const string link_name = "");
 
+	/// @brief returns true if the model exists in the world (robot or object),
+	/// false otherwise
 	bool modelExistsInWorld(const std::string& model_name) const {
 		return robotExistsInWorld(model_name) ||
 			   dynamicObjectExistsInWorld(model_name) ||
 			   staticObjectExistsInWorld(model_name);
 	}
 
+	/// @brief returns true if the robot exists in the world, false otherwise
 	bool robotExistsInWorld(const std::string& robot_name,
 							const std::string& link_name = "") const;
 
+	/// @brief returns true if the object exists in the world and is a dynamic
+	/// object, false otherwise
 	bool dynamicObjectExistsInWorld(const std::string& object_name) const;
+
+	/// @brief returns true if the object exists in the world and is a static
+	/// object, false otherwise
 	bool staticObjectExistsInWorld(const std::string& object_name) const;
 
+	/// @brief returns true if the camera exists in the world, false otherwise
 	bool cameraExistsInWorld(const std::string& camera_name) const;
 
 private:
