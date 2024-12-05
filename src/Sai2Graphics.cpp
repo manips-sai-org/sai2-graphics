@@ -144,10 +144,10 @@ GLFWwindow* glfwInitialize(const std::string& window_name) {
 	// information about computer screen and GLUT display window
 	int screenW = mode->width;
 	int screenH = mode->height;
-	int windowW = 0.8 * screenH;
+	int windowW = 0.5 * screenW;
 	int windowH = 0.5 * screenH;
 	int windowPosY = (screenH - windowH) / 2;
-	int windowPosX = windowPosY;
+	int windowPosX = (screenW - windowW) / 2;
 
 	// create window and make it current context
 	glfwWindowHint(GLFW_VISIBLE, 0);
