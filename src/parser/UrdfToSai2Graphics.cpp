@@ -92,14 +92,23 @@ static void loadVisualtoGenericObject(
 				Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename);
 		}
 
-		if (processed_filepath.substr(processed_filepath.length() - 4) ==
-			".stl") {
+		if (processed_filepath.length() < 5) {
+			cerr << "Couldn't load obj/3ds/STL robot link file, extension not "
+					"supported: "
+				 << processed_filepath << endl;
+			abort();
+		}
+
+		std::string extension =
+			processed_filepath.substr(processed_filepath.length() - 4);
+		std::transform(extension.begin(), extension.end(), extension.begin(),
+					   [](unsigned char c) { return std::tolower(c); });
+
+		if (extension == ".stl") {
 			file_load_success = cLoadFileSTL(tmp_mmesh, processed_filepath);
-		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
-				   ".obj") {
+		} else if (extension == ".obj") {
 			file_load_success = cLoadFileOBJ(tmp_mmesh, processed_filepath);
-		} else if (processed_filepath.substr(processed_filepath.length() - 4) ==
-				   ".3ds") {
+		} else if (extension == ".3ds") {
 			file_load_success = cLoadFile3DS(tmp_mmesh, processed_filepath);
 		}
 		if (!file_load_success) {
@@ -222,7 +231,8 @@ void UrdfToSai2GraphicsWorld(
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& dyn_object_poses,
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>&
 		static_object_poses,
-	std::map<std::string, cFrameBufferPtr>& camera_frame_buffers, bool verbose) {
+	std::map<std::string, cFrameBufferPtr>& camera_frame_buffers,
+	bool verbose) {
 	// load world urdf file
 	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
 	ifstream model_file(resolved_filename);
