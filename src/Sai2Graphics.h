@@ -1,16 +1,16 @@
 /**
- * \file Sai2Graphics.h
+ * \file SaiGraphics.h
  *
  *  Created on: Dec 30, 2016
  *      Author: Shameek Ganguly
  */
 
-#ifndef SAI2_GRAPHICS_H
-#define SAI2_GRAPHICS_H
+#ifndef SAI_GRAPHICS_H
+#define SAI_GRAPHICS_H
 
 #include <chai3d.h>
 
-#include "Sai2Model.h"
+#include "SaiModel.h"
 #include "widgets/ForceSensorDisplay.h"
 #include "widgets/UIForceWidget.h"
 
@@ -18,7 +18,7 @@
 #include <GLFW/glfw3.h>	 //must be loaded after loading opengl/glew
 // clang-format on
 
-namespace Sai2Graphics {
+namespace SaiGraphics {
 
 struct CameraLinkAttachment {
 	std::string model_name;
@@ -33,7 +33,7 @@ struct CameraLinkAttachment {
 		  pose_in_link(pose_in_link) {}
 };
 
-class Sai2Graphics {
+class SaiGraphics {
 public:
 	/**
 	 * @brief Creates a Chai graphics interface object that contains a visual
@@ -43,12 +43,12 @@ public:
 	 * @param verbose To display information about the robot model creation in
 	 * the terminal or not.
 	 */
-	Sai2Graphics(const std::string& path_to_world_file,
-				 const std::string& window_name = "sai2 world",
+	SaiGraphics(const std::string& path_to_world_file,
+				 const std::string& window_name = "sai world",
 				 bool verbose = false);
 
 	// dtor
-	~Sai2Graphics();
+	~SaiGraphics();
 
 	/**
 	 * @brief resets the rendered world and re initializes it with the new world
@@ -283,7 +283,7 @@ public:
 	 * @param sensor_data force sensor data that contains the name of robot or
 	 * object, the link name and the pose of the sensor in the link frame.
 	 */
-	void addForceSensorDisplay(const Sai2Model::ForceSensorData& sensor_data);
+	void addForceSensorDisplay(const SaiModel::ForceSensorData& sensor_data);
 
 	/**
 	 * @brief updates the displayed force sensor with the new force and moment
@@ -296,7 +296,7 @@ public:
 	 * and should come from the simulation.
 	 */
 	void updateDisplayedForceSensor(
-		const Sai2Model::ForceSensorData& force_data);
+		const SaiModel::ForceSensorData& force_data);
 
 	/// @brief returns true if the given key is pressed, false otherwise
 	bool isKeyPressed(int key) const {
@@ -435,7 +435,7 @@ private:
 	 *
 	 */
 	std::map<std::string, std::string> _robot_filenames;
-	std::map<std::string, std::shared_ptr<Sai2Model::Sai2Model>> _robot_models;
+	std::map<std::string, std::shared_ptr<SaiModel::SaiModel>> _robot_models;
 
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>> _dyn_objects_pose;
 	std::map<std::string, std::shared_ptr<Eigen::Vector6d>> _object_velocities;
@@ -471,6 +471,6 @@ private:
 	int _window_height;
 };
 
-}  // namespace Sai2Graphics
+}  // namespace SaiGraphics
 
 #endif	// CHAI_GRAPHICS_H

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "Sai2Graphics.h"
+#include "SaiGraphics.h"
 
 using namespace std;
 
@@ -14,7 +14,7 @@ const string robot_name_2 = "RBot2";
 
 int main() {
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file_1);
+	auto graphics = new SaiGraphics::SaiGraphics(world_file_1);
 
 	// setup robot joint positions
 	Eigen::VectorXd q_robot1 = Eigen::VectorXd::Zero(1);

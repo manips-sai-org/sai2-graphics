@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "Sai2Graphics.h"
+#include "SaiGraphics.h"
 
 using namespace std;
 
@@ -12,13 +12,13 @@ const string camera_name = "camera_fixed";
 const string object_name = "Box";
 
 int main() {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_03_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_03_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/03-multiple_cameras";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
 	auto graphics =
-		new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
+		new SaiGraphics::SaiGraphics(world_file, "sai world", true);
 
 	unsigned long long counter = 0;
 

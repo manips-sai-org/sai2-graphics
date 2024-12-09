@@ -1,10 +1,10 @@
-#ifndef SAI2GRAPHICS_FORCE_SENSOR_DISPLAY_H
-#define SAI2GRAPHICS_FORCE_SENSOR_DISPLAY_H
+#ifndef SaiGraphics_FORCE_SENSOR_DISPLAY_H
+#define SaiGraphics_FORCE_SENSOR_DISPLAY_H
 
-#include <Sai2Model.h>
+#include <SaiModel.h>
 #include <chai3d.h>
 
-namespace Sai2Graphics {
+namespace SaiGraphics {
 
 // Class to display force and moments sensed by a force/moment sensor
 // This will display the reaction forces/moments on the sensor.
@@ -15,7 +15,7 @@ public:
 	ForceSensorDisplay(const std::string& robot_name,
 					   const std::string& link_name,
 					   const Eigen::Affine3d T_link_sensor,
-					   std::shared_ptr<Sai2Model::Sai2Model> robot,
+					   std::shared_ptr<SaiModel::SaiModel> robot,
 					   chai3d::cWorld* chai_world);
 
 	ForceSensorDisplay(const std::string& object_name,
@@ -43,7 +43,7 @@ private:
 	chai3d::cShapeLine* _display_line_moment;
 
 	// robot model
-	std::shared_ptr<Sai2Model::Sai2Model> _robot;
+	std::shared_ptr<SaiModel::SaiModel> _robot;
 	const std::string _robot_or_object_name;
 	const std::string _link_name;
 	const Eigen::Affine3d _T_link_sensor;
@@ -58,6 +58,6 @@ private:
 	double _moment_line_scale;
 };
 
-}  // namespace Sai2Graphics
+}  // namespace SaiGraphics
 
-#endif	// SAI2GRAPHICS_FORCE_SENSOR_DISPLAY_H
+#endif	// SaiGraphics_FORCE_SENSOR_DISPLAY_H

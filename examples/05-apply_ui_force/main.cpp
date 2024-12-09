@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "Sai2Graphics.h"
+#include "SaiGraphics.h"
 
 using namespace std;
 
@@ -19,7 +19,7 @@ int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file);
+	auto graphics = std::make_shared<SaiGraphics::SaiGraphics>(world_file);
 	Eigen::VectorXd robot_q = graphics->getRobotJointPos(robot_name);
 	Eigen::Affine3d object_pose = graphics->getObjectPose(object_name);
 
