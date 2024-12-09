@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "Sai2Graphics.h"
+#include "SaiGraphics.h"
 
 using namespace std;
 
@@ -15,7 +15,7 @@ const string object_name = "Box";
 
 int main() {
 	// load graphics scene
-	auto graphics = new Sai2Graphics::Sai2Graphics(world_file);
+	auto graphics = new SaiGraphics::SaiGraphics(world_file);
 
 	// attach camera 2 and 3 to the robot and object respectively
 	Matrix3d R_cam_robot;

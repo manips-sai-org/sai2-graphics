@@ -1,22 +1,22 @@
 /**
- * \file UrdfToSai2Graphics.cpp
+ * \file UrdfToSaiGraphics.cpp
  *
  *  Created on: Dec 30, 2016
  *      Author: Shameek Ganguly
  */
 
-#include "UrdfToSai2Graphics.h"
+#include "UrdfToSaiGraphics.h"
 
 #include <urdf/urdfdom/urdf_parser/include/urdf_parser/urdf_parser.h>
 #include <urdf/urdfdom_headers/urdf_model/include/urdf_model/model.h>
 
-#include "parser/Sai2ModelParserUtils.h"
+#include "parser/SaiModelParserUtils.h"
 
-typedef my_shared_ptr<Sai2Urdfreader::Link> LinkPtr;
-typedef const my_shared_ptr<const Sai2Urdfreader::Link> ConstLinkPtr;
-typedef my_shared_ptr<Sai2Urdfreader::Joint> JointPtr;
-typedef my_shared_ptr<Sai2Urdfreader::ModelInterface> ModelPtr;
-typedef my_shared_ptr<Sai2Urdfreader::World> WorldPtr;
+typedef my_shared_ptr<SaiUrdfreader::Link> LinkPtr;
+typedef const my_shared_ptr<const SaiUrdfreader::Link> ConstLinkPtr;
+typedef my_shared_ptr<SaiUrdfreader::Joint> JointPtr;
+typedef my_shared_ptr<SaiUrdfreader::ModelInterface> ModelPtr;
+typedef my_shared_ptr<SaiUrdfreader::World> WorldPtr;
 
 #include <Eigen/Core>
 using namespace Eigen;
@@ -57,12 +57,12 @@ static cGenericObject* getGenericObjectChildRecursive(
 	return NULL;
 }
 
-// internal helper function to load a Sai2Urdfreader::Visual to a cGenericObject
+// internal helper function to load a SaiUrdfreader::Visual to a cGenericObject
 // TODO: working dir default should be "", but this requires checking
 // to make sure that the directory path has a trailing backslash
 static void loadVisualtoGenericObject(
 	cGenericObject* object,
-	const my_shared_ptr<Sai2Urdfreader::Visual>& visual_ptr,
+	const my_shared_ptr<SaiUrdfreader::Visual>& visual_ptr,
 	const std::string& working_dirname = "./") {
 	// parse material if specified
 	const auto material_ptr = visual_ptr->material;
@@ -75,9 +75,9 @@ static void loadVisualtoGenericObject(
 	const auto geom_type = visual_ptr->geometry->type;
 	auto tmp_mmesh = new cMultiMesh();
 	auto tmp_mesh = new cMesh();
-	if (geom_type == Sai2Urdfreader::Geometry::MESH) {
+	if (geom_type == SaiUrdfreader::Geometry::MESH) {
 		// downcast geometry ptr to mesh type
-		const auto mesh_ptr = dynamic_cast<const Sai2Urdfreader::Mesh*>(
+		const auto mesh_ptr = dynamic_cast<const SaiUrdfreader::Mesh*>(
 			visual_ptr->geometry.get());
 		assert(mesh_ptr);
 
@@ -86,10 +86,10 @@ static void loadVisualtoGenericObject(
 
 		std::string processed_filepath =
 			working_dirname + "/" + mesh_ptr->filename;
-		if (Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename) !=
+		if (SaiModel::ReplaceUrdfPathPrefix(mesh_ptr->filename) !=
 			mesh_ptr->filename) {
 			processed_filepath =
-				Sai2Model::ReplaceUrdfPathPrefix(mesh_ptr->filename);
+				SaiModel::ReplaceUrdfPathPrefix(mesh_ptr->filename);
 		}
 
 		if (processed_filepath.length() < 5) {
@@ -123,9 +123,9 @@ static void loadVisualtoGenericObject(
 		if (color) {
 			tmp_mmesh->m_material->setColor(*color);
 		}
-	} else if (geom_type == Sai2Urdfreader::Geometry::BOX) {
+	} else if (geom_type == SaiUrdfreader::Geometry::BOX) {
 		// downcast geometry ptr to box type
-		const auto box_ptr = dynamic_cast<const Sai2Urdfreader::Box*>(
+		const auto box_ptr = dynamic_cast<const SaiUrdfreader::Box*>(
 			visual_ptr->geometry.get());
 		assert(box_ptr);
 		// create chai box mesh
@@ -134,9 +134,9 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == Sai2Urdfreader::Geometry::SPHERE) {
+	} else if (geom_type == SaiUrdfreader::Geometry::SPHERE) {
 		// downcast geometry ptr to sphere type
-		const auto sphere_ptr = dynamic_cast<const Sai2Urdfreader::Sphere*>(
+		const auto sphere_ptr = dynamic_cast<const SaiUrdfreader::Sphere*>(
 			visual_ptr->geometry.get());
 		assert(sphere_ptr);
 		// create chai sphere mesh
@@ -145,9 +145,9 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == Sai2Urdfreader::Geometry::CYLINDER) {
+	} else if (geom_type == SaiUrdfreader::Geometry::CYLINDER) {
 		// downcast geometry ptr to cylinder type
-		const auto cylinder_ptr = dynamic_cast<const Sai2Urdfreader::Cylinder*>(
+		const auto cylinder_ptr = dynamic_cast<const SaiUrdfreader::Cylinder*>(
 			visual_ptr->geometry.get());
 		assert(cylinder_ptr);
 		// create chai cylinder mesh
@@ -158,9 +158,9 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->m_material->setColor(*color);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == Sai2Urdfreader::Geometry::CAPSULE) {
+	} else if (geom_type == SaiUrdfreader::Geometry::CAPSULE) {
 		// downcast geometry ptr to cylinder type
-		const auto capsule_ptr = dynamic_cast<const Sai2Urdfreader::Capsule*>(
+		const auto capsule_ptr = dynamic_cast<const SaiUrdfreader::Capsule*>(
 			visual_ptr->geometry.get());
 		assert(capsule_ptr);
 		if (color) {
@@ -191,9 +191,9 @@ static void loadVisualtoGenericObject(
 			tmp_mesh->setUseVertexColors(true, true);
 		}
 		tmp_mmesh->addMesh(tmp_mesh);
-	} else if (geom_type == Sai2Urdfreader::Geometry::PYRAMID) {
+	} else if (geom_type == SaiUrdfreader::Geometry::PYRAMID) {
 		// downcast geometry ptr to pyramid type
-		const auto pyramid_ptr = dynamic_cast<const Sai2Urdfreader::Pyramid*>(
+		const auto pyramid_ptr = dynamic_cast<const SaiUrdfreader::Pyramid*>(
 			visual_ptr->geometry.get());
 		assert(pyramid_ptr);
 		chai3d::cCreatePyramid(tmp_mesh, pyramid_ptr->num_sides,
@@ -225,7 +225,7 @@ static void loadVisualtoGenericObject(
 	object->addChild(tmp_mmesh);
 }
 
-void UrdfToSai2GraphicsWorld(
+void UrdfToSaiGraphicsWorld(
 	const std::string& filename, chai3d::cWorld* world,
 	std::map<std::string, std::string>& robot_filenames,
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& dyn_object_poses,
@@ -234,7 +234,7 @@ void UrdfToSai2GraphicsWorld(
 	std::map<std::string, cFrameBufferPtr>& camera_frame_buffers,
 	bool verbose) {
 	// load world urdf file
-	std::string resolved_filename = Sai2Model::ReplaceUrdfPathPrefix(filename);
+	std::string resolved_filename = SaiModel::ReplaceUrdfPathPrefix(filename);
 	ifstream model_file(resolved_filename);
 	if (!model_file) {
 		cerr << "Error opening file '" << resolved_filename << "'." << endl;
@@ -253,10 +253,10 @@ void UrdfToSai2GraphicsWorld(
 
 	// parse xml to URDF world model
 	assert(world);
-	WorldPtr urdf_world = Sai2Urdfreader::parseURDFWorld(model_xml_string);
+	WorldPtr urdf_world = SaiUrdfreader::parseURDFWorld(model_xml_string);
 	world->m_name = urdf_world->name_;
 	if (verbose) {
-		cout << "UrdfToSai2GraphicsWorld: Starting model conversion to chai "
+		cout << "UrdfToSaiGraphicsWorld: Starting model conversion to chai "
 				"graphics world."
 			 << endl;
 		cout << "+ add world: " << world->m_name << endl;
@@ -283,9 +283,9 @@ void UrdfToSai2GraphicsWorld(
 		world->addChild(robot);
 
 		// load robot from file
-		UrdfToSai2GraphicsRobot(
+		UrdfToSaiGraphicsRobot(
 			robot_spec->model_filename, robot, verbose,
-			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
+			SaiModel::ReplaceUrdfPathPrefix(robot_spec->model_working_dir));
 		assert(robot->m_name == robot_spec->model_name);
 
 		// overwrite robot name with custom name for this instance
@@ -298,7 +298,7 @@ void UrdfToSai2GraphicsWorld(
 				"Different robots cannot have the same name in the world");
 		}
 		robot_filenames[robot->m_name] =
-			Sai2Model::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
+			SaiModel::ReplaceUrdfPathPrefix(robot_spec->model_working_dir) +
 			"/" + robot_spec->model_filename;
 	}
 
@@ -462,7 +462,7 @@ void UrdfToSai2GraphicsWorld(
 	}
 }
 
-void UrdfToSai2GraphicsRobot(const std::string& filename,
+void UrdfToSaiGraphicsRobot(const std::string& filename,
 							 chai3d::cRobotBase* base, bool verbose,
 							 const std::string& working_dirname) {
 	// load and parse model file
@@ -485,10 +485,10 @@ void UrdfToSai2GraphicsRobot(const std::string& filename,
 
 	// read and parse xml string to urdf model
 	assert(base);
-	ModelPtr urdf_model = Sai2Urdfreader::parseURDF(model_xml_string);
+	ModelPtr urdf_model = SaiUrdfreader::parseURDF(model_xml_string);
 	base->m_name = urdf_model->getName();
 	if (verbose) {
-		cout << "UrdfToSai2GraphicsRobot: Starting model conversion to chai."
+		cout << "UrdfToSaiGraphicsRobot: Starting model conversion to chai."
 			 << endl;
 		cout << "+ add robot: " << base->m_name << endl;
 	}
@@ -649,7 +649,7 @@ void UrdfToSai2GraphicsRobot(const std::string& filename,
 	}
 
 	if (verbose) {
-		cout << "UrdfToSai2GraphicsRobot: Finished model conversion to chai."
+		cout << "UrdfToSaiGraphicsRobot: Finished model conversion to chai."
 			 << endl;
 	}
 }

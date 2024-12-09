@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-#include "Sai2Graphics.h"
+#include "SaiGraphics.h"
 
 using namespace std;
 
@@ -13,15 +13,15 @@ const string world_file =
 	string(EXAMPLES_FOLDER) + "/06-force_sensor_display/world.urdf";
 
 int main() {
-	Sai2Model::URDF_FOLDERS["EXAMPLE_06_FOLDER"] =
+	SaiModel::URDF_FOLDERS["EXAMPLE_06_FOLDER"] =
 		string(EXAMPLES_FOLDER) + "/06-force_sensor_display";
 	cout << "Loading URDF world model file: " << world_file << endl;
 
 	// load graphics scene
-	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file);
+	auto graphics = std::make_shared<SaiGraphics::SaiGraphics>(world_file);
 
 	// create force data and force display
-	Sai2Model::ForceSensorData force_data = Sai2Model::ForceSensorData();
+	SaiModel::ForceSensorData force_data = SaiModel::ForceSensorData();
 	force_data.robot_or_object_name = "PBot";
 	force_data.link_name = "cube_link";
 	graphics->addForceSensorDisplay(force_data);

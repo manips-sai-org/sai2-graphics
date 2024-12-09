@@ -10,11 +10,11 @@ namespace {
 	double max_distance_from_camera = 10.0 - 1e-3;
 }
 
-namespace Sai2Graphics {
+namespace SaiGraphics {
 
 UIForceWidget::UIForceWidget(const std::string& robot_name,
 							 const bool interact_at_object_center,
-							 std::shared_ptr<Sai2Model::Sai2Model> robot,
+							 std::shared_ptr<SaiModel::SaiModel> robot,
 							 chai3d::cShapeLine* display_line)
 	: _robot_or_object_name(robot_name),
 	  _interact_at_object_center(interact_at_object_center),
@@ -224,7 +224,7 @@ Eigen::Vector6d UIForceWidget::getAppliedForceMoment() const {
 		velocity = _robot->velocity6d(_link_name, _link_local_pos);
 	} else {
 		Eigen::MatrixXd J = Eigen::MatrixXd::Identity(6, 6);
-		J.block<3, 3>(0, 3) = -Sai2Model::crossProductOperator(
+		J.block<3, 3>(0, 3) = -SaiModel::crossProductOperator(
 			_object_pose->rotation() * _link_local_pos);
 		velocity = J * *_object_velocity;
 	}
@@ -258,11 +258,11 @@ Eigen::VectorXd UIForceWidget::getUIJointTorques() const {
 		J = _robot->JWorldFrame(_link_name, _link_local_pos);
 	} else {
 		J = Eigen::MatrixXd::Identity(6, 6);
-		J.block<3, 3>(0, 3) = -Sai2Model::crossProductOperator(
+		J.block<3, 3>(0, 3) = -SaiModel::crossProductOperator(
 			_object_pose->rotation() * _link_local_pos);
 	}
 
 	return (J.transpose() * force_moment);
 }
 
-}  // namespace Sai2Graphics
+}  // namespace SaiGraphics

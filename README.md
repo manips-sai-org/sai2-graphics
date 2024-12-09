@@ -1,8 +1,8 @@
-# sai2-graphics
+# sai-graphics
 
-This is SAI2 graphics library for simulation displays.
+This is SAI graphics library for simulation displays.
 It uses [CHAI3D](https://github.com/manips-sai-org/chai3d).
-You will need to download and build Chai3d before you can install sai2-graphics.
+You will need to download and build Chai3d before you can install sai-graphics.
 
 ## Build instructions 
 ```

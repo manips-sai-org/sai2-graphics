@@ -1,7 +1,7 @@
-#ifndef SAI2GRAPHICS_UIFORCE_WIDGET_H
-#define SAI2GRAPHICS_UIFORCE_WIDGET_H
+#ifndef SaiGraphics_UIFORCE_WIDGET_H
+#define SaiGraphics_UIFORCE_WIDGET_H
 
-#include <Sai2Model.h>
+#include <SaiModel.h>
 #include <chai3d.h>
 
 #include <Eigen/Core>
@@ -9,7 +9,7 @@
 
 #include "chai_extension/CRobotLink.h"
 
-namespace Sai2Graphics {
+namespace SaiGraphics {
 
 class UIForceWidget {
 public:
@@ -19,7 +19,7 @@ public:
 	// ctor
 	UIForceWidget(const std::string &robot_name,
 				  const bool interact_at_object_center,
-				  std::shared_ptr<Sai2Model::Sai2Model> robot,
+				  std::shared_ptr<SaiModel::SaiModel> robot,
 				  chai3d::cShapeLine *display_line);
 
 	UIForceWidget(const std::string &object_name,
@@ -96,7 +96,7 @@ private:
 	std::string _robot_or_object_name;
 
 	// robot model this UIForceWidget is associated with
-	std::shared_ptr<Sai2Model::Sai2Model> _robot;
+	std::shared_ptr<SaiModel::SaiModel> _robot;
 	std::shared_ptr<Eigen::Affine3d> _object_pose;
 	std::shared_ptr<Eigen::Vector6d> _object_velocity;
 	bool _is_robot;
@@ -130,6 +130,6 @@ private:
 	double _click_depth;
 };
 
-}  // namespace Sai2Graphics
+}  // namespace SaiGraphics
 
-#endif	// SAI2GRAPHICS_UIFORCE_WIDGET_H
+#endif	// SaiGraphics_UIFORCE_WIDGET_H

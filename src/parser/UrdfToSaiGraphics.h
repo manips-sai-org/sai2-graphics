@@ -1,12 +1,12 @@
 /**
- * \file UrdfToSai2Graphics.h
+ * \file UrdfToSaiGraphics.h
  *
  *  Created on: Dec 30, 2016
  *      Author: Shameek Ganguly
  */
 
-#ifndef URDF_TO_SAI2GRAPHICS_H
-#define URDF_TO_SAI2GRAPHICS_H
+#ifndef URDF_TO_SaiGraphics_H
+#define URDF_TO_SaiGraphics_H
 
 #include <chai3d.h>
 
@@ -23,7 +23,7 @@ namespace Parser {
  * @param verbose To display information about the robot model creation in the
  * terminal or not.
  */
-void UrdfToSai2GraphicsWorld(
+void UrdfToSaiGraphicsWorld(
 	const std::string& filename, chai3d::cWorld* world,
 	std::map<std::string, std::string>& robot_filenames,
 	std::map<std::string, std::shared_ptr<Eigen::Affine3d>>& dyn_object_poses,
@@ -40,7 +40,7 @@ void UrdfToSai2GraphicsWorld(
  * @param working_dirname Directory path relative to which paths within the
  * model file are specified.
  */
-void UrdfToSai2GraphicsRobot(const std::string& filename,
+void UrdfToSaiGraphicsRobot(const std::string& filename,
 							 chai3d::cRobotBase* base, bool verbose,
 							 const std::string& working_dirname = "./");
 // TODO: working dir default should be "", but this requires checking
@@ -48,4 +48,4 @@ void UrdfToSai2GraphicsRobot(const std::string& filename,
 
 }  // namespace Parser
 
-#endif	// URDF_TO_SAI2GRAPHICS_H
+#endif	// URDF_TO_SaiGraphics_H

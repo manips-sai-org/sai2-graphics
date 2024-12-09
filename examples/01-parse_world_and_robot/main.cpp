@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "Sai2Graphics.h"
+#include "SaiGraphics.h"
 
 using namespace std;
 
@@ -16,7 +16,7 @@ int main() {
 
 	// load graphics scene
 	auto graphics =
-		new Sai2Graphics::Sai2Graphics(world_file, "sai2 world", true);
+		new SaiGraphics::SaiGraphics(world_file, "sai world", true);
 
 	cout << endl
 		 << "This example parses a world file containing a simple robot, it "

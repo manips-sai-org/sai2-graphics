@@ -1,11 +1,11 @@
 #include "ForceSensorDisplay.h"
 
-namespace Sai2Graphics {
+namespace SaiGraphics {
 
 ForceSensorDisplay::ForceSensorDisplay(
 	const std::string& robot_name, const std::string& link_name,
 	const Eigen::Affine3d T_link_sensor,
-	std::shared_ptr<Sai2Model::Sai2Model> robot, chai3d::cWorld* chai_world)
+	std::shared_ptr<SaiModel::SaiModel> robot, chai3d::cWorld* chai_world)
 	: _robot(robot),
 	  _robot_or_object_name(robot_name),
 	  _link_name(link_name),
@@ -74,4 +74,4 @@ void ForceSensorDisplay::hideLines() {
 	_display_line_force->setShowEnabled(false);
 }
 
-}  // namespace Sai2Graphics
+}  // namespace SaiGraphics
